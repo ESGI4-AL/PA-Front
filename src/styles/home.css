@@ -1,0 +1,17 @@
+@import url('https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700');
+
+.gradient {
+  background: linear-gradient(90deg, #fa3747 0%, #ffccbb 100%);
+}
+
+.wave {
+  fill: #f8fafc;
+}
+
+.wave-top {
+  width: 100%;
+}
+
+.plane-take-off {
+  fill: #5c6ac4;
+}
