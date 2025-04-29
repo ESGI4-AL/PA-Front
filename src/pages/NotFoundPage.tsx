@@ -7,7 +7,7 @@ const NotFoundPage: React.FC = () => {
       <div className="gradient relative">
         <div className="container mx-auto px-6 py-8">
           <h1 className="text-white font-bold text-4xl md:text-5xl text-center">
-            Oops! Page Not Found
+            Oups ! Page Non Trouvée
           </h1>
         </div>
         <svg className="wave-top w-full" viewBox="0 0 1440 116" xmlns="http://www.w3.org/2000/svg">
@@ -30,11 +30,11 @@ const NotFoundPage: React.FC = () => {
           </div>
 
           <h2 className="text-3xl font-bold text-gray-800 mb-4">
-            Looks like this roll has gone missing!
+            On dirait que ce sushi a disparu !
           </h2>
 
           <p className="text-gray-600 mb-8">
-            The page you're looking for seems to have been eaten or might still be in the kitchen.
+            La page que vous recherchez semble avoir été mangée ou est peut-être encore en cuisine.
           </p>
         </div>
       </div>
