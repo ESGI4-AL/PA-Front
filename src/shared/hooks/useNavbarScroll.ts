@@ -1,5 +1,5 @@
 import { useState, useEffect, RefObject } from 'react';
-import { updateNavbarStyle } from '../utils/navbarUtils';
+import { updateNavbarStyle } from '../../utils/navbarUtils';
 
 interface NavbarElements {
   header: RefObject<HTMLElement>;
@@ -8,10 +8,10 @@ interface NavbarElements {
 }
 
 /**
- * Custom hook to handle navbar scroll behavior in home page.
+ * Hook personnalisé pour gérer le comportement de défilement de la barre de navigation sur la page d'accueil.
  *
- * @param elements Object containing refs to navbar elements
- * @returns Current scroll position
+ * @param elements Objet contenant les références aux éléments de la barre de navigation
+ * @returns Position actuelle du défilement
  */
 export const useNavbarScroll = (elements: NavbarElements): number => {
   const [scrollPos, setScrollPos] = useState(0);

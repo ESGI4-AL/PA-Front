@@ -1,8 +1,7 @@
 import React from 'react';
-import Navbar from '../components/common/Navbar';
-import Footer from '../components/common/Footer';
-import Content from '../components/common/Content';
-import '../styles/home.css';
+import Navbar from '../shared/layouts/Navbar';
+import Footer from '../shared/layouts/Footer';
+import Content from '../shared/layouts/Content';
 
 const HomePage: React.FC = () => {
   return (
