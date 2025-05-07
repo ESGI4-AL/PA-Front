@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LoginCredentials } from '../../../domains/user/models/userModels';
+import { LoginCredentials } from '@/domains/user/models/userModels';
 import { useLoginFormValidation } from '../hooks/useFormValidation';
 
 interface LoginFormProperties {

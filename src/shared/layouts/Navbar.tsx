@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useNavbarScroll } from '../hooks/useNavbarScroll';
 import { useClickOutside } from '../hooks/useClickOutside';
-import logo from '../../assets/images/logo.svg';
+import logo from '@/assets/images/logo.svg';
 
 const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);

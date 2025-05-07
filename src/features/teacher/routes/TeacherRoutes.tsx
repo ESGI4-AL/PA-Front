@@ -1,5 +1,5 @@
 import { Route } from 'react-router-dom';
-import DashboardLayout from '../../../shared/layouts/DashboardLayout';
+import DashboardLayout from '@/shared/layouts/DashboardLayout';
 import TeacherDashboard from '../dashboard/TeacherDashboard';
 import PromotionsPage from '../promotions/pages/PromotionPage';
 import PromotionCreatePage from '../promotions/pages/PromotionCreatePage';

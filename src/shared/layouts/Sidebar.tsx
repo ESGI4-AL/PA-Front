@@ -1,5 +1,5 @@
 import { ChevronFirst, ChevronLast } from 'lucide-react';
-import logo from '../../assets/images/logo.svg';
+import logo from '@/assets/images/logo.svg';
 import { useSidebar } from '../hooks/useSidebar';
 import SidebarItemComponent from '../components/SidebarItemComponent';
 import { SidebarProvider, useSidebarContext } from '../contexts/SidebarContext';

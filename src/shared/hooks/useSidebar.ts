@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { User } from '../../domains/user/models/userModels';
+import { User } from '@/domains/user/models/userModels';
 import { useSidebarContext } from '../contexts/SidebarContext';
 
 export const useSidebar = (role: 'teacher' | 'student') => {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { validateEmail, validateName } from '../../../utils/authValidators';
+import { validateEmail, validateName } from '@/utils/authValidators';
 
 export const useLoginFormValidation = (email: string, password: string) => {
   const [emailError, setEmailError] = useState('');

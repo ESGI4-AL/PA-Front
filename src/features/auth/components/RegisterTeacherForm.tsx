@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { RegisterTeacherData } from '../../../domains/user/models/userModels';
+import { RegisterTeacherData } from '@/domains/user/models/userModels';
 import { useRegisterFormValidation } from '../hooks/useFormValidation';
 
 interface RegisterTeacherFormProperties {

@@ -1,9 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import schoolImage from '../../assets/images/school.png';
-import groupesSvg from '../../assets/images/teamwork.svg';
-import livrablesSvg from '../../assets/images/livrables.svg';
-import rapportsSvg from '../../assets/images/rapports.svg';
+import schoolImage from '@/assets/images/school.png';
+import groupesSvg from '@/assets/images/teamwork.svg';
+import livrablesSvg from '@/assets/images/livrables.svg';
+import rapportsSvg from '@/assets/images/rapports.svg';
 
 const Content: React.FC = () => {
   return (

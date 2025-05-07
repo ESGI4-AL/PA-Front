@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, LoginCredentials, RegisterTeacherData, AuthResponse } from '../../../domains/user/models/userModels';
-import { loginUser, registerTeacher } from '../../../domains/user/services/authService';
-import { translateErrorMessage } from '../../../utils/errorTranslator';
+import { User, LoginCredentials, RegisterTeacherData, AuthResponse } from '@/domains/user/models/userModels';
+import { loginUser, registerTeacher } from '@/domains/user/services/authService';
+import { translateErrorMessage } from '@/utils/errorTranslator';
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(() => {

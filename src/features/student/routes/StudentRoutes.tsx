@@ -1,5 +1,5 @@
 import { Route } from 'react-router-dom';
-import DashboardLayout from '../../../shared/layouts/DashboardLayout';
+import DashboardLayout from '@/shared/layouts/DashboardLayout';
 import StudentDashboard from '../dashboard/StudentDashboard';
 
 const StudentRoutes = (

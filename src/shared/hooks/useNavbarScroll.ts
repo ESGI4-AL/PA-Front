@@ -1,5 +1,5 @@
 import { useState, useEffect, RefObject } from 'react';
-import { updateNavbarStyle } from '../../utils/navbarUtils';
+import { updateNavbarStyle } from '@/utils/navbarUtils';
 
 interface NavbarElements {
   header: RefObject<HTMLElement>;

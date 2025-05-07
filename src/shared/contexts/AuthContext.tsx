@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { User, LoginCredentials, RegisterTeacherData, AuthResponse } from '../../domains/user/models/userModels';
-import { loginUser, registerTeacher, getAuthToken } from '../../domains/user/services/authService';
-import { translateErrorMessage } from '../../utils/errorTranslator';
+import { User, LoginCredentials, RegisterTeacherData, AuthResponse } from '@/domains/user/models/userModels';
+import { loginUser, registerTeacher, getAuthToken } from '@/domains/user/services/authService';
+import { translateErrorMessage } from '@/utils/errorTranslator';
 
 interface AuthContextType {
   user: User | null;

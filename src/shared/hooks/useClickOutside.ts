@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { handleOutsideClick } from '../../utils/navbarUtils';
+import { handleOutsideClick } from '@/utils/navbarUtils';
 
 /**
  * Hook personnalisé pour gérer les clics en dehors du menu de navigation
