@@ -1,8 +1,9 @@
 import { ChevronFirst, ChevronLast } from 'lucide-react';
 import logo from '../../assets/images/logo.svg';
 import { useSidebar } from '../hooks/useSidebar';
-import SidebarItem from '../components/SidebarItemComponent';
+import SidebarItemComponent from '../components/SidebarItemComponent';
 import { SidebarProvider, useSidebarContext } from '../contexts/SidebarContext';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 
 interface SidebarProperties {
   role: 'teacher' | 'student';
@@ -16,8 +17,13 @@ function SidebarContent({ role }: SidebarProperties) {
     links,
     isLinkActive
   } = useSidebar(role);
-
   const { expanded, toggleExpanded } = useSidebarContext();
+  const { logout } = useAuth();
+
+  const handleLogout = (e: React.MouseEvent) => {
+    e.preventDefault();
+    logout();
+  };
 
   return (
     <nav className="h-full flex flex-col shadow-lg gradient rounded-r-2xl">
@@ -33,10 +39,9 @@ function SidebarContent({ role }: SidebarProperties) {
           {expanded ? <ChevronFirst size={18} /> : <ChevronLast size={18} />}
         </button>
       </div>
-
       <ul className="flex-1 px-3 py-3">
         {links.map(link => (
-          <SidebarItem
+          <SidebarItemComponent
             key={link.to}
             icon={link.icon}
             text={link.label}
@@ -45,15 +50,14 @@ function SidebarContent({ role }: SidebarProperties) {
           />
         ))}
         <div className="my-3 border-t border-white/20"></div>
-
-        <SidebarItem
+        <SidebarItemComponent
           icon="LogOut"
           text="Logout"
           to="/logout"
           active={false}
+          onClick={handleLogout}
         />
       </ul>
-
       <div className="border-t border-white/20 flex p-3">
         {user ? (
           <>

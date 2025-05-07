@@ -9,6 +9,7 @@ interface SidebarItemProperties {
   active: boolean;
   alert?: boolean;
   to: string;
+  onClick?: (e: React.MouseEvent) => void;
 }
 
 // on map les icones
@@ -20,7 +21,7 @@ const iconMap: Record<string, React.ReactNode> = {
   LogOut: <LogOut size={20} />
 };
 
-const SidebarItemComponent: React.FC<SidebarItemProperties> = ({ icon, text, active, alert, to }) => {
+const SidebarItemComponent: React.FC<SidebarItemProperties> = ({ icon, text, active, alert, to, onClick }) => {
   const { expanded } = useSidebarContext();
   const iconComponent = iconMap[icon] || <Home size={20} />; // par default l'icone est "home" si celui-ci ne charge pas
 
@@ -33,7 +34,11 @@ const SidebarItemComponent: React.FC<SidebarItemProperties> = ({ icon, text, act
         ? "bg-white/20 text-white"
         : "hover:bg-white/10 text-white/80"}
     `}>
-      <Link to={to} className="flex items-center w-full">
+      <Link
+        to={to}
+        className="flex items-center w-full"
+        onClick={onClick}
+      >
         {iconComponent}
         <span
           className={`overflow-hidden transition-all ${
