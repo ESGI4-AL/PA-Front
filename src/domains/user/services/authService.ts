@@ -2,6 +2,14 @@ import { LoginCredentials, RegisterTeacherData, AuthResponse } from '../models/u
 
 const API_URL = 'http://localhost:3000/api';
 
+export const getAuthToken = (): string | null => {
+  return localStorage.getItem('authToken');
+};
+
+export const hasToken = (): boolean => {
+  return !!getAuthToken();
+};
+
 export const loginUser = async (credentials: LoginCredentials): Promise<AuthResponse> => {
   const response = await fetch(`${API_URL}/auth/login`, {
     method: 'POST',
@@ -45,4 +53,13 @@ export const registerTeacher = async (teacherData: RegisterTeacherData): Promise
   }
 
   return data.data;
+};
+
+export const isAuthenticated = (): boolean => {
+  return hasToken();
+};
+
+export const logout = (): void => {
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('user');
 };

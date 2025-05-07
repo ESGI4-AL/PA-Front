@@ -9,18 +9,16 @@ import NotFoundPage from '../../pages/NotFoundPage';
 
 function AppRoutes() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register/teacher" element={<RegisterTeacherPage />} />
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register/teacher" element={<RegisterTeacherPage />} />
 
-        {TeacherRoutes}
-        {StudentRoutes}
+      {TeacherRoutes}
+      {StudentRoutes}
 
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
-    </Router>
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
   );
 }
 
