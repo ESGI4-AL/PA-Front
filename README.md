@@ -20,6 +20,23 @@ $ npm run test:watch
 ```bash
 $ npm run test:coverage
 ```
+
+## How to use shadcn/ui components
+
+To add a component use the command below with the name of the component you want to add.
+
+```bash
+$ npx shadcn@latest add componentName
+```
+
+exemple :
+```bash
+$ npx shadcn@latest add breadcrumb
+```
+
+checkout the doc:
+https://ui.shadcn.com/docs/installation
+
 ## Built with
 [![React][React.js]][React-url] [![Tailwind CSS][Tailwind.css]][Tailwind-url]
 
