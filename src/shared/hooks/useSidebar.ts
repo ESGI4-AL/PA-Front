@@ -65,6 +65,7 @@ export const useSidebar = (role: 'teacher' | 'student') => {
 
   const teacherLinks = [
     { to: '/teacher', label: 'Dashboard', icon: 'Home' },
+    { to: '/teacher/promotions', label: 'Promotions', icon: 'Users' },
   ];
 
   const studentLinks = [
