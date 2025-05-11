@@ -8,13 +8,15 @@ import {
   getPromotionStudents,
   addStudentToPromotion,
   importStudentsToPromotion,
-  removeStudentFromPromotion
+  removeStudentFromPromotion,
+  updateStudentInPromotion
 } from '@/domains/promotion/services/promotionService';
 import {
   Promotion,
   CreatePromotionRequest,
   UpdatePromotionRequest,
-  Student
+  Student,
+  StudentFilters
 } from '@/domains/promotion/models/promotionModels';
 
 export const usePromotions = () => {
@@ -38,6 +40,22 @@ export const usePromotions = () => {
     }
   }, []);
 
+  const fetchPromotionById = useCallback(async (id: string) => {
+    setLoading(true);
+    try {
+      const promotion = await getPromotionById(id);
+      setCurrentPromotion(promotion);
+      setError(null);
+      return promotion;
+    } catch (err) {
+      setError('Erreur lors du chargement de la promotion');
+      console.error(err);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const fetchPromotionDetails = useCallback(async (id: string) => {
     setLoading(true);
     try {
@@ -52,15 +70,18 @@ export const usePromotions = () => {
     }
   }, []);
 
-  const fetchStudents = useCallback(async (promotionId: string) => {
+  const fetchStudents = useCallback(async (promotionId: string, filters: StudentFilters = {}) => {
     setLoading(true);
     try {
-      const data = await getPromotionStudents(promotionId);
-      setStudents(Array.isArray(data) ? data : []);
+      const studentsArray = await getPromotionStudents(promotionId, filters);
+      setStudents(studentsArray);
       setError(null);
+      return studentsArray;
     } catch (err) {
       setError('Erreur lors du chargement des étudiants');
       console.error(err);
+      setStudents([]);
+      return [];
     } finally {
       setLoading(false);
     }
@@ -184,6 +205,29 @@ export const usePromotions = () => {
     }
   }, []);
 
+  const updateStudent = useCallback(async (promotionId: string, studentId: string, studentData: { firstName: string; lastName: string; email: string }) => {
+    setLoading(true);
+    try {
+      const updatedStudent = await updateStudentInPromotion(promotionId, studentId, studentData);
+
+      setStudents(prev => {
+        if (!Array.isArray(prev)) {
+          return [updatedStudent];
+        }
+        return prev.map(s => s.id === studentId ? updatedStudent : s);
+      });
+
+      setError(null);
+      return updatedStudent;
+    } catch (err) {
+      setError('Erreur lors de la modification de l\'étudiant');
+      console.error(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const removeStudent = useCallback(async (promotionId: string, studentId: string) => {
     setLoading(true);
     try {
@@ -217,6 +261,7 @@ export const usePromotions = () => {
     currentPromotion,
     students,
     fetchPromotions,
+    fetchPromotionById,
     fetchPromotionDetails,
     fetchStudents,
     addPromotion,
@@ -224,6 +269,7 @@ export const usePromotions = () => {
     removePromotion,
     addStudent,
     importStudents,
+    updateStudent,
     removeStudent
   };
 };
