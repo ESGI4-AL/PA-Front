@@ -1,4 +1,4 @@
-import { Promotion, CreatePromotionRequest, UpdatePromotionRequest, Student } from '../models/promotionModels';
+import { Promotion, CreatePromotionRequest, UpdatePromotionRequest, Student, StudentFilters } from '../models/promotionModels';
 import { getAuthToken } from '../../user/services/authService';
 
 const API_URL = 'http://localhost:3000/api';
@@ -127,15 +127,27 @@ export const deletePromotion = async (id: string): Promise<void> => {
   }
 };
 
-export const getPromotionStudents = async (id: string): Promise<Student[]> => {
+export const getPromotionStudents = async (id: string, filters: StudentFilters = {}): Promise<Student[]> => {
   try {
-    const response = await fetch(`${API_URL}/promotions/${id}/students`, {
+    const queryParams = new URLSearchParams();
+    if (filters.search) queryParams.append('search', filters.search);
+    if (filters.isActive !== undefined) queryParams.append('isActive', filters.isActive.toString());
+    if (filters.page) queryParams.append('page', filters.page.toString());
+    if (filters.limit) queryParams.append('limit', filters.limit.toString());
+
+    queryParams.append('_', Date.now().toString());
+
+    const url = `${API_URL}/promotions/${id}/students${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+
+    const response = await fetch(url, {
       headers: {
         ...getAuthHeaders()
       }
     });
 
-    return handleApiResponse(response);
+    const data = await handleApiResponse(response);
+
+    return data.students || [];
   } catch (error) {
     console.error(`Erreur lors de la récupération des étudiants pour la promotion avec l'ID ${id}:`, error);
     throw error;
@@ -176,6 +188,24 @@ export const importStudentsToPromotion = async (promotionId: string, file: File)
     return handleApiResponse(response);
   } catch (error) {
     console.error('Erreur lors de l\'importation des étudiants:', error);
+    throw error;
+  }
+};
+
+export const updateStudentInPromotion = async (promotionId: string, studentId: string, student: { firstName: string; lastName: string; email: string }): Promise<Student> => {
+  try {
+    const response = await fetch(`${API_URL}/promotions/${promotionId}/students/${studentId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders()
+      },
+      body: JSON.stringify(student)
+    });
+
+    return handleApiResponse(response);
+  } catch (error) {
+    console.error('Erreur lors de la modification d\'un étudiant:', error);
     throw error;
   }
 };
