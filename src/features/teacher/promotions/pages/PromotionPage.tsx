@@ -139,10 +139,6 @@ const PromotionsPage: React.FC = () => {
     navigate(`/teacher/promotions/${id}/edit`);
   };
 
-  const handleViewDetails = (id: string) => {
-    navigate(`/teacher/promotions/${id}`);
-  };
-
   const handleRefresh = () => {
     fetchPromotions();
   };
@@ -271,9 +267,6 @@ const PromotionsPage: React.FC = () => {
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => handleViewDetails(promotion.id)}>
-                        Voir les détails
-                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleEdit(promotion.id)}>
                         <Edit className="mr-2 h-4 w-4" />
                         Modifier
