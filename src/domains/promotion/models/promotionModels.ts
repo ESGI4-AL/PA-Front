@@ -14,6 +14,13 @@ export interface Student {
   email: string;
 }
 
+export interface StudentFilters {
+  search?: string;
+  isActive?: boolean;
+  page?: number;
+  limit?: number;
+}
+
 export interface CreatePromotionRequest {
   name: string;
   year: number;
