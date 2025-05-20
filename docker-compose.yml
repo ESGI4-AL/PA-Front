@@ -1,0 +1,7 @@
+services:
+  front:
+    build: .
+    ports:
+      - "3000:80"
+    container_name: pa-front
+    restart: always
