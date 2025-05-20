@@ -3,6 +3,11 @@ import { Link } from 'react-router-dom';
 import logo from '@/assets/images/logo.svg';
 import LoginForm from '../components/LoginForm';
 import { useAuth } from '../hooks/useAuth';
+import googleLogo from '@/assets/images/ic_google_logo.png';
+import microsoftLogo from '@/assets/images/ic_microsoft_logo.png';
+import logger from '@/utils/logger';
+
+import { loginWithGoogle, loginWithMicrosoft } from '@/services/authProviders';
 
 const LoginPage: React.FC = () => {
   const { login, error, showError } = useAuth();
@@ -44,6 +49,39 @@ const LoginPage: React.FC = () => {
                 </div>
                 <div className="flex-auto px-6 lg:px-12 py-12 pt-0">
                   <LoginForm onSubmit={login} error={error} />
+                </div>
+                <div className="mb-6">
+                  <p className="text-gray-800 text-center mb-4">Ou connectez-vous avec</p>
+                  <div className="flex justify-center gap-4">
+                    <button
+                      onClick={async () => {
+                        try {
+                          const res = await loginWithGoogle();
+                          logger.info('Connexion avec Google', res);
+                          // TODO : Stocker l'utilisateur, rediriger, etc.
+                        } catch (e) {
+                          logger.error('Erreur de connexion Google', e);
+                        }
+                      }}
+                      className="bg-white border border-gray-300 rounded-full p-2 hover:shadow-md transition"
+                    >
+                      <img src={googleLogo} alt="Connexion Google" className="h-6 w-6" />
+                    </button>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const res = await loginWithMicrosoft();
+                          logger.info('Connexion avec Microsoft', res);
+                          // TODO : Stocker l'utilisateur, rediriger, etc.
+                        } catch (e) {
+                          logger.error('Erreur de connexion Microsoft', e);
+                        }
+                      }}
+                      className="bg-white border border-gray-300 rounded-full p-2 hover:shadow-md transition"
+                    >
+                      <img src={microsoftLogo} alt="Connexion Microsoft" className="h-6 w-6" />
+                    </button>
+                  </div>
                 </div>
               </div>
               <div className="flex flex-wrap mt-6">
