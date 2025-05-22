@@ -2,6 +2,8 @@ services:
   front:
     build: .
     ports:
-      - "3000:80"
+      - "5173:80"
     container_name: pa-front
     restart: always
+    environment:
+      - VITE_API_URL=http://localhost:3000/api
