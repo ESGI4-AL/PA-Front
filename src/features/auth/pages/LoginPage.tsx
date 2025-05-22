@@ -6,11 +6,13 @@ import { useAuth } from '../hooks/useAuth';
 import googleLogo from '@/assets/images/ic_google_logo.png';
 import microsoftLogo from '@/assets/images/ic_microsoft_logo.png';
 import logger from '@/utils/logger';
+import { useNavigate } from 'react-router-dom';
 
 import { loginWithGoogle, loginWithMicrosoft } from '@/services/authProviders';
 
 const LoginPage: React.FC = () => {
   const { login, error, showError } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <div className="leading-normal tracking-normal text-white gradient min-h-screen" style={{ fontFamily: "'Source Sans Pro', sans-serif" }}>
@@ -58,7 +60,18 @@ const LoginPage: React.FC = () => {
                         try {
                           const res = await loginWithGoogle();
                           logger.info('Connexion avec Google', res);
-                          // TODO : Stocker l'utilisateur, rediriger, etc.
+
+                          localStorage.setItem('authToken', res.data.token);
+                          localStorage.setItem('user', JSON.stringify(res.data.user));
+
+                          const role = res.data.user.role;
+                          if (role === 'teacher') {
+                            navigate('/teacher');
+                          } else if (role === 'student') {
+                            navigate('/student');
+                          } else {
+                            navigate('/');
+                          }
                         } catch (e) {
                           logger.error('Erreur de connexion Google', e);
                         }
@@ -72,7 +85,18 @@ const LoginPage: React.FC = () => {
                         try {
                           const res = await loginWithMicrosoft();
                           logger.info('Connexion avec Microsoft', res);
-                          // TODO : Stocker l'utilisateur, rediriger, etc.
+                        
+                          localStorage.setItem('authToken', res.data.token);
+                          localStorage.setItem('user', JSON.stringify(res.data.user));
+
+                          const role = res.data.user.role;
+                          if (role === 'teacher') {
+                            navigate('/teacher');
+                          } else if (role === 'student') {
+                            navigate('/student');
+                          } else {
+                            navigate('/');
+                          }
                         } catch (e) {
                           logger.error('Erreur de connexion Microsoft', e);
                         }
