@@ -21,6 +21,18 @@ $ npm run test:watch
 $ npm run test:coverage
 ```
 
+## .env Configuration
+To run the project locally, create a .env file at the root of the project:
+
+/.env
+
+With the following content:
+
+VITE_API_URL=http://localhost:3000/api
+
+Note: This file is ignored by Git (.gitignore) — it should never be committed to the repository.
+In production, this variable is automatically provided by Railway.
+
 ## How to use shadcn/ui components
 
 To add a component use the command below with the name of the component you want to add.

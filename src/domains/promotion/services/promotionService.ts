@@ -1,7 +1,7 @@
 import { Promotion, CreatePromotionRequest, UpdatePromotionRequest, Student, StudentFilters } from '../models/promotionModels';
 import { getAuthToken } from '../../user/services/authService';
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 const getAuthHeaders = () => {
   const token = getAuthToken();
