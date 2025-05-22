@@ -11,3 +11,4 @@ createRoot(document.getElementById('root')!).render(
 )
 
 logger.info('🚀 Application lancée');
+console.log('🔍 API_URL used at build time:', import.meta.env.VITE_API_URL);
