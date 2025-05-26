@@ -99,7 +99,7 @@ const ReportEditor: React.FC = () => {
   const toolbarButton = (
     active: boolean,
     onClick: () => void,
-    icon: JSX.Element,
+    icon: React.ReactNode,
     label: string
   ) => (
     <button
