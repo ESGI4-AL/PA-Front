@@ -64,15 +64,23 @@ export const useSidebar = (role: 'teacher' | 'student') => {
   };
 
   const teacherLinks = [
-    { to: '/teacher', label: 'Dashboard', icon: 'Home' },
+    { to: '/teacher', label: 'Tableau de bord', icon: 'Home' },
     { to: '/teacher/promotions', label: 'Promotions', icon: 'Users' },
+    { to: '/teacher/projects', label: 'Projets', icon: 'BookOpen' },
   ];
 
   const studentLinks = [
-    { to: '/student', label: 'Dashboard', icon: 'Home' },
+    { to: '/student', label: 'Tableau de bord', icon: 'Home' },
+    { to: '/student/promotions/my-promotion', label: 'Promotion', icon: 'Users' },
+    { to: '/student/projects/my-projects', label: 'Projets', icon: 'BookOpen' },
   ];
 
-  const links = role === 'teacher' ? teacherLinks : studentLinks;
+  const commonLinks = [
+    { to: `/${role}/notifications`, label: 'Notifications', icon: 'Bell'},
+    { to: `/${role}/settings`, label: 'Paramètres', icon: 'Settings' },
+  ];
+
+  const roleSpecificLinks = role === 'teacher' ? teacherLinks : studentLinks;
 
   const isLinkActive = (path: string) => location.pathname === path;
 
@@ -82,7 +90,8 @@ export const useSidebar = (role: 'teacher' | 'student') => {
     user,
     getUserName,
     getUserInitials,
-    links,
+    roleSpecificLinks,
+    commonLinks,
     isLinkActive
   };
 };
