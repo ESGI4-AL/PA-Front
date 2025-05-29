@@ -18,7 +18,7 @@ import TeacherProjectPresentationsTab from "../components/Presentations/TeacherP
 import TeacherProjectEvaluationTab from "../components/Evaluations/TeacherProjectEvaluationTab";
 
 
-const TeacherProjectsDetailPage: React.FC = () => {
+const TeacherProjectsSettingsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
@@ -171,4 +171,4 @@ const TeacherProjectsDetailPage: React.FC = () => {
   );
 };
 
-export default TeacherProjectsDetailPage;
+export default TeacherProjectsSettingsPage;
