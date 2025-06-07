@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -12,6 +12,8 @@ import TextAlign from '@tiptap/extension-text-align';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 
+import axios from 'axios';
+
 import {
   FaBold, FaItalic, FaUnderline, FaStrikethrough,
   FaHeading, FaListUl, FaListOl, FaQuoteRight, FaCode,
@@ -19,7 +21,12 @@ import {
   FaAlignLeft, FaAlignCenter, FaAlignRight, FaParagraph
 } from 'react-icons/fa';
 
-const ReportEditor: React.FC = () => {
+interface ReportEditorProps {
+  report: any | null;
+  setReport: (data: any) => void;
+}
+
+const ReportEditor: React.FC<ReportEditorProps> = ({ report, setReport }) => {
   const [mode, setMode] = useState<'upload' | 'edit'>('edit');
   const [fileName, setFileName] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string>('#000000');
@@ -38,13 +45,41 @@ const ReportEditor: React.FC = () => {
       TaskList,
       TaskItem,
     ],
-    content: '<p>Commencez votre rapport ici...</p>',
+    content: report?.content || '<p>Commencez votre rapport ici...</p>',
   });
 
-  const handleSave = () => {
+  const groupId = '63eda8a5-6a99-4d5e-8a4b-5b8c1e832751'; // TODO : rendre dynamique
+  const projectId = '191eda93-a5d8-42af-af8c-d4f42a0f7d85'; // TODO : rendre dynamique
+
+  const handleSave = async () => {
     const content = editor?.getHTML();
-    console.log('📄 Contenu sauvegardé :', content);
-    alert('Contenu sauvegardé (voir console).');
+    if (!content) return;
+
+    const headers = {}; // TODO : Ajouter auth si nécessaire
+
+    try {
+      if (report?.id) {
+        // Mise à jour
+        await axios.put(
+          `http://localhost:3000/api/reports/${report.id}`,
+          { content },
+          { headers }
+        );
+      } else {
+        // Création
+        const res = await axios.post(
+          `http://localhost:3000/api/projects/${projectId}/groups/${groupId}/report`,
+          { content },
+          { headers }
+        );
+        setReport(res.data.data);
+      }
+
+      alert('Rapport sauvegardé avec succès !');
+    } catch (err) {
+      console.error('Erreur de sauvegarde du rapport :', err);
+      alert('Erreur lors de la sauvegarde.');
+    }
   };
 
   const handlePrint = () => {
@@ -256,12 +291,13 @@ const ReportEditor: React.FC = () => {
               >
                 Exporter en PDF
               </button>
-              <button
-                onClick={() => alert('Rapport validé !')}
+              {/* TODO  */}
+              {/* <button
+                onClick={handleUploadToFirebase}
                 className="bg-gradient-to-r from-red-600 to-pink-600 text-white font-semibold px-4 py-2 rounded hover:brightness-110 transition"
               >
-                Valider
-              </button>
+                Envoyer
+              </button> */}
             </div>
           </div>
         </div>

@@ -1,10 +1,15 @@
 import React, { useEffect, useState } from 'react';
 
-const DeadlineBanner: React.FC = () => {
-  const deadline = new Date('2025-06-01T23:59:59'); // 🔧 Ajuste la deadline ici
-  const [timeParts, setTimeParts] = useState<string[]>([]);
+interface DeadlineBannerProps {
+  deadline: Date | null;
+}
 
+const DeadlineBanner: React.FC<DeadlineBannerProps> = ({ deadline }) => {
+  const [timeParts, setTimeParts] = useState<string[]>([]);
+  
   useEffect(() => {
+    if (!deadline) return;
+
     const interval = setInterval(() => {
       const now = new Date().getTime();
       const distance = deadline.getTime() - now;
@@ -29,7 +34,9 @@ const DeadlineBanner: React.FC = () => {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [deadline]);
+
+  if (!deadline) return null;
 
   return (
     <div className="flex justify-center items-center space-x-4 pt-6">

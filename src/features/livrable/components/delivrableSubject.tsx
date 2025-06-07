@@ -1,6 +1,12 @@
 import React from 'react';
 
-const DeliverableSubject: React.FC = () => {
+interface DeliverableSubjectProps {
+  deliverable: any | null;
+}
+
+const DeliverableSubject: React.FC<DeliverableSubjectProps> = ({ deliverable }) => {
+  if (!deliverable) return null;
+
   return (
     <div className="mt-32 mb-16 max-w-4xl mx-auto px-6">
       {/* Titre */}
@@ -12,7 +18,7 @@ const DeliverableSubject: React.FC = () => {
           Télécharger l'énoncé au format PDF :
         </p>
         <a
-          href="/documents/sujet-projet.pdf" // 🔧 À adapter
+          href={deliverable?.documentUrl || '/documents/sujet-projet.pdf'} // <-- dynamique ici
           target="_blank"
           rel="noopener noreferrer"
           className="bg-gradient-to-r from-red-600 to-pink-600 text-white font-semibold px-4 py-2 rounded hover:brightness-110 transition"
@@ -24,10 +30,9 @@ const DeliverableSubject: React.FC = () => {
       {/* Bloc de lecture directe du sujet */}
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-gray-800 text-lg font-semibold mb-2">Intitulé du sujet :</h3>
-        <p className="text-gray-700 leading-relaxed">
-          Le projet consiste à concevoir une plateforme web de gestion de projets pour étudiants et enseignants,
-          incluant une interface de rendu, un système de notation, et un tableau de bord interactif.
-          Vous devrez travailler en équipe, respecter les délais, et suivre une méthodologie agile.
+        <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+          {deliverable?.description ||
+            'Aucune description fournie pour ce livrable.'}
         </p>
       </div>
     </div>
