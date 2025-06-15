@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-import logo from '@/assets/images/logo.svg';
+import Sidebar from '@/shared/layouts/Sidebar';
+
 import DeadlineBanner from '../components/deadlineBanner';
 import DeliverableSubject from '../components/delivrableSubject';
 import DeliverableUpload from '../components/delivrableUpload';
@@ -16,29 +17,21 @@ const StudentLivrablePage: React.FC = () => {
   const [defense, setDefense] = useState<any | null>(null);
   const [report, setReport] = useState<any | null>(null);
 
-  const groupId = '63eda8a5-6a99-4d5e-8a4b-5b8c1e832751'; // TODO : À rendre dynamique
-  const deliverableId = '98040338-453b-4ca2-b82d-50fb58fb06ab'; // TODO : À rendre dynamique
+  const groupId = '63eda8a5-6a99-4d5e-8a4b-5b8c1e832751';
+  const deliverableId = '98040338-453b-4ca2-b82d-50fb58fb06ab';
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const headers = {};
 
-        // const token = localStorage.getItem('token');
-        // const headers = { Authorization: `Bearer ${token}` };
-        const headers = {}; // TODO : Ajouter token si besoin
-
-        // 1. Récupération du projet via le groupe
         const projectRes = await axios.get(
           `http://localhost:3000/api/groups/${groupId}/project`,
           { headers }
         );
         const projectId = projectRes.data?.data?.id;
-        if (!projectId) {
-          console.error('Project ID not found');
-          return;
-        }
+        if (!projectId) return;
 
-        // 2. Récupération des livrables
         const deliverableRes = await axios.get(
           `http://localhost:3000/api/projects/${projectId}/deliverables`,
           { headers }
@@ -52,33 +45,26 @@ const StudentLivrablePage: React.FC = () => {
           setDeadline(correctedDate);
         }
 
-        // 3. Récupération des membres du groupe
         const groupRes = await axios.get(
           `http://localhost:3000/api/groups/${groupId}`,
           { headers }
         );
-        const students = groupRes.data?.data?.members || [];
-        setMembers(students);
+        setMembers(groupRes.data?.data?.members || []);
 
-        // 4. Récupération de la soutenance
         const presentationRes = await axios.get(
           `http://localhost:3000/api/projects/${projectId}/presentations`,
           { headers }
         );
-        const allPresentations = presentationRes.data?.data || [];
-        const groupDefense = allPresentations.find((p: any) => p.groupId === groupId);
-        if (groupDefense) {
-          setDefense(groupDefense);
-        }
+        const groupDefense = (presentationRes.data?.data || []).find(
+          (p: any) => p.groupId === groupId
+        );
+        if (groupDefense) setDefense(groupDefense);
 
-        // 5. Récupération du rapport
         const reportRes = await axios.get(
           `http://localhost:3000/api/projects/${projectId}/groups/${groupId}/report`,
           { headers }
         );
-        if (reportRes.data?.data) {
-          setReport(reportRes.data.data);
-        }
+        if (reportRes.data?.data) setReport(reportRes.data.data);
       } catch (error) {
         console.error('Erreur lors du chargement des données :', error);
       }
@@ -88,37 +74,54 @@ const StudentLivrablePage: React.FC = () => {
   }, []);
 
   return (
-    <div
-      className="leading-normal tracking-normal text-white min-h-screen bg-gradient-to-b from-red-500 to-pink-300 pb-24"
-      style={{ fontFamily: "'Source Sans Pro', sans-serif" }}
-    >
-      {/* Navbar */}
-      <nav className="fixed w-full z-30 top-0 text-white bg-gradient-to-b from-red-500 to-pink-300 bg-opacity-90 backdrop-blur-md shadow-md">
-        <div className="w-full container mx-auto flex flex-wrap items-center justify-between mt-0 py-2">
-          <div className="pl-4 flex items-center">
-            <Link
-              to="/"
-              className="toggleColour text-white no-underline hover:no-underline font-bold text-2xl lg:text-4xl"
-            >
-              <img src={logo} alt="Kōdō Logo" className="h-12 inline mr-2" />
-              <span className="mt-4">Kōdō</span>
-            </Link>
+    <div className="flex min-h-screen bg-neutral-100 font-sans text-gray-900">
+      {/* Sidebar */}
+      <Sidebar role="student" />
+
+      {/* Main content */}
+      <main className="ml-64 w-full px-10 py-6">
+        {/* Breadcrumbs */}
+        <div className="flex justify-between items-center text-sm text-gray-500 mb-6">
+          <div>
+            Projets / Détails / <span className="text-black font-medium">Aperçu</span>
           </div>
+          <Link to="/projects" className="border px-3 py-1 rounded hover:bg-gray-100">
+            Retour
+          </Link>
         </div>
-        <hr className="border-b border-white opacity-25 my-0 py-0" />
-      </nav>
 
-      {/* Timer */}
-      <div className="pt-20">
-        <DeadlineBanner deadline={deadline} />
-      </div>
+        {/* Tabs */}
+        <div className="flex space-x-2 mb-6 text-sm font-medium">
+          <button className="bg-pink-100 text-red-600 px-3 py-1 rounded">Aperçu</button>
+          <button className="hover:underline">Modifier le projet</button>
+          <button className="hover:underline">Groupes</button>
+          <button className="hover:underline">Livrables</button>
+          <button className="hover:underline">Rapports</button>
+          <button className="hover:underline">Soutenances</button>
+          <button className="hover:underline">Évaluations</button>
+        </div>
 
-      {/* Main Content */}
-      <DeliverableSubject deliverable={deliverable} />
-      <TeamMembers members={members} />
-      <DelivrableDefense defense={defense} />
-      <ReportEditor report={report} setReport={setReport} />
-      <DeliverableUpload />
+        {/* Page content */}
+        <div className="space-y-6">
+          <DeadlineBanner deadline={deadline} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <DeliverableSubject deliverable={deliverable} />
+            <div className="bg-white shadow rounded p-4 text-sm text-gray-700">
+              <ul className="list-disc list-inside">
+                <li>Temps restant</li>
+                <li>Télécharger le sujet en PDF</li>
+                <li>Description du sujet</li>
+                <li>Statistiques</li>
+                <li>Date de soutenance</li>
+              </ul>
+            </div>
+          </div>
+          <TeamMembers members={members} />
+          <DelivrableDefense defense={defense} />
+          <ReportEditor report={report} setReport={setReport} />
+          <DeliverableUpload />
+        </div>
+      </main>
     </div>
   );
 };
