@@ -81,16 +81,18 @@ const TeacherProjectForm: React.FC<ProjectFormProps> = ({
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-      status: ProjectStatus.DRAFT,
-      minGroupSize: 1,
-      maxGroupSize: 1,
-      groupFormationMethod: GroupFormationMethod.MANUAL,
-      groupFormationDeadline: undefined,
-      promotionId: "",
-    },
+    ...(isEdit ? {} : {
+      defaultValues: {
+        name: "",
+        description: "",
+        status: ProjectStatus.DRAFT,
+        minGroupSize: 1,
+        maxGroupSize: 1,
+        groupFormationMethod: GroupFormationMethod.MANUAL,
+        groupFormationDeadline: undefined,
+        promotionId: "",
+      }
+    })
   });
 
   useEffect(() => {
@@ -204,7 +206,7 @@ const TeacherProjectForm: React.FC<ProjectFormProps> = ({
                     <FormControl>
                       <RadioGroup
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value}
                         className="flex flex-col space-y-1"
                       >
                         <div className="flex items-center space-x-2">
@@ -228,7 +230,7 @@ const TeacherProjectForm: React.FC<ProjectFormProps> = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Promotion*</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Sélectionner une promotion" />
@@ -390,7 +392,7 @@ const TeacherProjectForm: React.FC<ProjectFormProps> = ({
                       <FormControl>
                         <RadioGroup
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          value={field.value}
                           className="flex flex-col space-y-3"
                         >
                           <div className="space-y-1">
