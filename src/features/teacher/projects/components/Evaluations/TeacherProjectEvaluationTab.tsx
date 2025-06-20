@@ -27,7 +27,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import { useEvaluations } from '../../hooks/useEvaluations';
 
-// Interfaces
 interface EvaluationCriteria {
   id: string;
   name: string;
@@ -159,17 +158,17 @@ const TeacherProjectEvaluationTab: React.FC = () => {
       
       await updateEvaluationCriteria(selectedCriteria.id, criteriaForm);
       
-      console.log('✅ Modification réussie, fermeture du dialog');
+      console.log('Modification réussie, fermeture du dialog');
       
 
       setIsEditCriteriaDialogOpen(false);
       resetSelectedStates();
       resetCriteriaForm();
       
-      console.log('✅ États réinitialisés');
+      console.log('États réinitialisés');
       
     } catch (error) {
-      console.error('❌ Erreur modification critère:', error);
+      console.error('Erreur modification critère:', error);
 
     }
   };
@@ -232,7 +231,7 @@ const TeacherProjectEvaluationTab: React.FC = () => {
 
 
   const openEditDialog = (criteria: EvaluationCriteria) => {
-    console.log('🔧 Ouverture dialog modification pour:', criteria);
+    console.log('Ouverture dialog modification pour:', criteria);
     
     if (!criteria || !criteria.id) {
       console.error('Critère invalide pour modification');
@@ -251,7 +250,7 @@ const TeacherProjectEvaluationTab: React.FC = () => {
     
     setIsEditCriteriaDialogOpen(true);
     
-    console.log('✅ Dialog modification ouvert');
+    console.log('Dialog modification ouvert');
   };
 
   const openDeleteDialog = (criteria: EvaluationCriteria) => {
@@ -592,7 +591,7 @@ const TeacherProjectEvaluationTab: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog de notation */}
+      {}
       <Dialog open={isGradeDialogOpen} onOpenChange={setIsGradeDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -825,7 +824,7 @@ const TeacherProjectEvaluationTab: React.FC = () => {
           </Card>
         </TabsContent>
 
-        {/* Onglet Attribution des notes */}
+        {}
         <TabsContent value="grading" className="space-y-6">
           {criteria.length === 0 ? (
             <Card>
@@ -944,7 +943,7 @@ const TeacherProjectEvaluationTab: React.FC = () => {
                           </div>
                         )}
                         
-                        {/* Critères individuels */}
+                        {}
                         {typeCriteria.some(c => c.type === 'individual') && (
                           <div className="space-y-4">
                             <h5 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide flex items-center gap-2">

@@ -20,7 +20,6 @@ export const usePresentations = (projectId: string) => {
       const data = await presentationService.getPresentationSchedule(projectId);
       setSchedules(data);
     } catch (err: any) {
-      // Ne pas considérer "Pas de planning trouvé" comme une erreur à afficher
       if (err.message && !err.message.includes('No presentation schedule found')) {
         setError(err.message || 'Erreur lors du chargement des soutenances');
         toast.error(err.message || 'Erreur lors du chargement des soutenances');

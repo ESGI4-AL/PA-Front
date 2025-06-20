@@ -71,19 +71,19 @@ const TeacherProjectGroupsTab: React.FC = () => {
  
   const handleCreateGroup = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('🚀 === DÉBUT handleCreateGroup ===');
-    console.log('📝 Données du formulaire:', groupForm);
+    console.log('=== DÉBUT handleCreateGroup ===');
+    console.log('Données du formulaire:', groupForm);
     
     try {
       const newGroup = await createGroup(groupForm);
-      console.log('✅ Groupe créé dans handleCreateGroup, fermeture dialog');
+      console.log('Groupe créé dans handleCreateGroup, fermeture dialog');
       
       setIsCreateGroupDialogOpen(false);
       setGroupForm({ name: '', memberIds: [] });
       
-      console.log('✅ Dialog fermé et formulaire reset');
+      console.log('Dialog fermé et formulaire reset');
     } catch (error) {
-      console.error('❌ Erreur dans handleCreateGroup:', error);
+      console.error('Erreur dans handleCreateGroup:', error);
       
     }
   };
@@ -100,9 +100,9 @@ const TeacherProjectGroupsTab: React.FC = () => {
 
   const handleEditGroup = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('✏️ === DÉBUT handleEditGroup ===');
-    console.log('📝 Groupe à modifier:', groupToEdit);
-    console.log('📝 Nouvelles données:', groupForm);
+    console.log('=== DÉBUT handleEditGroup ===');
+    console.log('Groupe à modifier:', groupToEdit);
+    console.log('Nouvelles données:', groupForm);
     
     try {
       await updateGroup(groupToEdit.id, {
@@ -114,15 +114,15 @@ const TeacherProjectGroupsTab: React.FC = () => {
       setGroupToEdit(null);
       setGroupForm({ name: '', memberIds: [] });
       
-      console.log('✅ Modification terminée avec succès');
+      console.log('Modification terminée avec succès');
     } catch (error) {
-      console.error('❌ Erreur dans handleEditGroup:', error);
+      console.error('Erreur dans handleEditGroup:', error);
     
     }
   };
 
   const openAssignDialog = (student: any) => {
-    console.log('👥 Ouverture dialog assignation:', student);
+    console.log('Ouverture dialog assignation:', student);
     setStudentToAssign(student);
     setIsAssignDialogOpen(true);
   };
@@ -181,16 +181,15 @@ const TeacherProjectGroupsTab: React.FC = () => {
     });
   };
 
-  // 🔧 VÉRIFICATIONS DE SÉCURITÉ
   const safeGroups = Array.isArray(groups) ? groups : [];
   const safeUnassignedStudents = Array.isArray(unassignedStudents) ? unassignedStudents : [];
   const safeStats = stats || { totalStudents: 0, totalGroups: 0, unassignedCount: 0, averageGroupSize: 0 };
 
-  console.log('🔍 RENDER - État actuel:');
-  console.log('📊 Groups:', safeGroups.length, safeGroups);
-  console.log('📊 UnassignedStudents:', safeUnassignedStudents.length, safeUnassignedStudents);
-  console.log('📊 Loading:', loading);
-  console.log('📊 Error:', error);
+  console.log('RENDER - État actuel:');
+  console.log('Groups:', safeGroups.length, safeGroups);
+  console.log('UnassignedStudents:', safeUnassignedStudents.length, safeUnassignedStudents);
+  console.log('Loading:', loading);
+  console.log('Error:', error);
 
   if (loading) {
     return (
@@ -202,7 +201,7 @@ const TeacherProjectGroupsTab: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* En-tête */}
+      {}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Groupes</h2>
@@ -308,7 +307,7 @@ const TeacherProjectGroupsTab: React.FC = () => {
         </div>
       </div>
 
-      {/* ✨ NOUVEAU: Dialog de modification de groupe */}
+      {}
       <Dialog open={isEditGroupDialogOpen} onOpenChange={setIsEditGroupDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -329,7 +328,7 @@ const TeacherProjectGroupsTab: React.FC = () => {
               />
             </div>
             
-            {/* Membres actuels */}
+            {}
             {groupToEdit && Array.isArray(groupToEdit.members) && groupToEdit.members.length > 0 && (
               <div className="space-y-2">
                 <Label>Membres actuels</Label>
@@ -380,7 +379,7 @@ const TeacherProjectGroupsTab: React.FC = () => {
               </div>
             )}
             
-            {/* Étudiants à ajouter */}
+            {}
             {safeUnassignedStudents.length > 0 && (
               <div className="space-y-2">
                 <Label>Ajouter des étudiants</Label>
