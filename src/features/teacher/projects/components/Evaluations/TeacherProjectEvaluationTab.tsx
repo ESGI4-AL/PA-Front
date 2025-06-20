@@ -469,7 +469,7 @@ const TeacherProjectEvaluationTab: React.FC = () => {
         </div>
       </div>
 
-      {/* ✅ DIALOG DE MODIFICATION AMÉLIORÉ */}
+      {}
       <Dialog open={isEditCriteriaDialogOpen} onOpenChange={closeEditDialog}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -660,7 +660,7 @@ const TeacherProjectEvaluationTab: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Statistiques */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
