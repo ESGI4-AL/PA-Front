@@ -102,31 +102,31 @@ interface UpdateSectionData {
 }
 
 const extractDataFromResponse = (response: any, dataType: string): any => {
-  console.log(`🔍 Extraction des données ${dataType}:`, response);
+  console.log(`Extraction des données ${dataType}:`, response);
   
   if (Array.isArray(response) && dataType.includes('[]')) {
-    console.log(`✅ ${dataType} déjà un tableau:`, response.length, 'éléments');
+    console.log(`${dataType} déjà un tableau:`, response.length, 'éléments');
     return response;
   }
   
   if (!response) {
-    console.log(`⚠️ ${dataType} null/undefined`);
+    console.log(`${dataType} null/undefined`);
     return dataType.includes('[]') ? [] : null;
   }
   
   if (typeof response === 'object') {
     if (response.data !== undefined) {
-      console.log(`✅ ${dataType} trouvé dans response.data`);
+      console.log(`${dataType} trouvé dans response.data`);
       return response.data;
     }
     
     if (response.id && !dataType.includes('[]')) {
-      console.log(`✅ ${dataType} semble être l'objet directement`);
+      console.log(`${dataType} semble être l'objet directement`);
       return response;
     }
   }
   
-  console.warn(`❌ Format de réponse ${dataType} non reconnu:`, response);
+  console.warn(`Format de réponse ${dataType} non reconnu:`, response);
   return dataType.includes('[]') ? [] : null;
 };
 
@@ -151,10 +151,10 @@ export const useReports = (projectId?: string) => {
     reportData: CreateReportData
   ): Promise<Report> => {
     try {
-      console.log('🆕 === DÉBUT CRÉATION RAPPORT ===');
-      console.log('📝 Project ID:', projectId);
-      console.log('📝 Group ID:', groupId);
-      console.log('📝 Données:', reportData);
+      console.log('=== DÉBUT CRÉATION RAPPORT ===');
+      console.log('Project ID:', projectId);
+      console.log('Group ID:', groupId);
+      console.log('Données:', reportData);
       
       setLoading(true);
       setError(null);
@@ -165,11 +165,11 @@ export const useReports = (projectId?: string) => {
         body: JSON.stringify(reportData),
       });
 
-      console.log('📡 Statut réponse:', response.status, response.statusText);
+      console.log('Statut réponse:', response.status, response.statusText);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ Erreur HTTP:', errorText);
+        console.error('Erreur HTTP:', errorText);
         
         let errorData;
         try {
@@ -180,21 +180,21 @@ export const useReports = (projectId?: string) => {
       }
 
       const result = await response.json();
-      console.log('📡 Réponse succès:', result);
+      console.log('Réponse succès:', result);
       
       const newReport = extractDataFromResponse(result, 'report');
-      console.log('✅ Nouveau rapport créé:', newReport);
+      console.log('Nouveau rapport créé:', newReport);
 
       if (projectId) {
         setReports(prev => [...prev, newReport]);
       }
 
       toast.success('Rapport créé avec succès');
-      console.log('✅ === FIN CRÉATION RAPPORT (SUCCÈS) ===');
+      console.log('=== FIN CRÉATION RAPPORT (SUCCÈS) ===');
       return newReport;
       
     } catch (err) {
-      console.error('❌ === ERREUR CRÉATION RAPPORT ===', err);
+      console.error('=== ERREUR CRÉATION RAPPORT ===', err);
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la création du rapport';
       setError(errorMessage);
       toast.error(errorMessage);
@@ -206,7 +206,7 @@ export const useReports = (projectId?: string) => {
 
   const fetchReportById = useCallback(async (reportId: string): Promise<Report> => {
     try {
-      console.log('🔍 === RÉCUPÉRATION RAPPORT PAR ID ===', reportId);
+      console.log('=== RÉCUPÉRATION RAPPORT PAR ID ===', reportId);
       
       setLoading(true);
       setError(null);
@@ -215,11 +215,11 @@ export const useReports = (projectId?: string) => {
         headers: getHeaders()
       });
 
-      console.log('📡 Statut réponse:', response.status, response.statusText);
+      console.log('Statut réponse:', response.status, response.statusText);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ Erreur HTTP:', errorText);
+        console.error('Erreur HTTP:', errorText);
         
         if (response.status === 404) {
           throw new Error('Rapport non trouvé');
@@ -231,16 +231,16 @@ export const useReports = (projectId?: string) => {
       }
 
       const result = await response.json();
-      console.log('📡 Réponse rapport:', result);
+      console.log('Réponse rapport:', result);
       
       const report = extractDataFromResponse(result, 'report');
-      console.log('✅ Rapport récupéré:', report);
+      console.log('Rapport récupéré:', report);
       
       setCurrentReport(report);
       return report;
       
     } catch (err) {
-      console.error('❌ === ERREUR RÉCUPÉRATION RAPPORT ===', err);
+      console.error('=== ERREUR RÉCUPÉRATION RAPPORT ===', err);
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération du rapport';
       setError(errorMessage);
       throw err;
@@ -254,9 +254,9 @@ export const useReports = (projectId?: string) => {
     groupId: string
   ): Promise<Report> => {
     try {
-      console.log('🔍 === RÉCUPÉRATION RAPPORT GROUPE ===');
-      console.log('📝 Project ID:', projectId);
-      console.log('📝 Group ID:', groupId);
+      console.log('=== RÉCUPÉRATION RAPPORT GROUPE ===');
+      console.log('Project ID:', projectId);
+      console.log('Group ID:', groupId);
       
       setLoading(true);
       setError(null);
@@ -265,11 +265,11 @@ export const useReports = (projectId?: string) => {
         headers: getHeaders()
       });
 
-      console.log('📡 Statut réponse:', response.status, response.statusText);
+      console.log('Statut réponse:', response.status, response.statusText);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ Erreur HTTP:', errorText);
+        console.error('Erreur HTTP:', errorText);
         
         if (response.status === 404) {
           throw new Error('Aucun rapport trouvé pour ce groupe');
@@ -279,16 +279,16 @@ export const useReports = (projectId?: string) => {
       }
 
       const result = await response.json();
-      console.log('📡 Réponse rapport groupe:', result);
+      console.log('Réponse rapport groupe:', result);
       
       const report = extractDataFromResponse(result, 'report');
-      console.log('✅ Rapport groupe récupéré:', report);
+      console.log('Rapport groupe récupéré:', report);
       
       setCurrentReport(report);
       return report;
       
     } catch (err) {
-      console.error('❌ === ERREUR RÉCUPÉRATION RAPPORT GROUPE ===', err);
+      console.error('=== ERREUR RÉCUPÉRATION RAPPORT GROUPE ===', err);
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération du rapport';
       setError(errorMessage);
       throw err;
@@ -299,7 +299,7 @@ export const useReports = (projectId?: string) => {
 
   const fetchProjectReports = useCallback(async (projectId: string): Promise<Report[]> => {
     try {
-      console.log('🔍 === RÉCUPÉRATION RAPPORTS PROJET ===', projectId);
+      console.log('=== RÉCUPÉRATION RAPPORTS PROJET ===', projectId);
       
       setLoading(true);
       setError(null);
@@ -308,11 +308,11 @@ export const useReports = (projectId?: string) => {
         headers: getHeaders()
       });
 
-      console.log('📡 Statut réponse:', response.status, response.statusText);
+      console.log('Statut réponse:', response.status, response.statusText);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ Erreur HTTP:', errorText);
+        console.error('Erreur HTTP:', errorText);
         
         if (response.status === 403) {
           throw new Error('Accès non autorisé à ces rapports');
@@ -322,16 +322,16 @@ export const useReports = (projectId?: string) => {
       }
 
       const result = await response.json();
-      console.log('📡 Réponse rapports projet:', result);
+      console.log('Réponse rapports projet:', result);
       
       const reportsData = extractDataFromResponse(result, 'reports[]');
-      console.log('✅ Rapports projet récupérés:', reportsData.length, reportsData);
+      console.log('Rapports projet récupérés:', reportsData.length, reportsData);
       
       setReports(reportsData);
       return reportsData;
       
     } catch (err) {
-      console.error('❌ === ERREUR RÉCUPÉRATION RAPPORTS PROJET ===', err);
+      console.error('=== ERREUR RÉCUPÉRATION RAPPORTS PROJET ===', err);
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération des rapports';
       setError(errorMessage);
       setReports([]);
@@ -346,9 +346,9 @@ export const useReports = (projectId?: string) => {
     updateData: UpdateReportData
   ): Promise<Report> => {
     try {
-      console.log('✏️ === DÉBUT MODIFICATION RAPPORT ===');
-      console.log('📝 Report ID:', reportId);
-      console.log('📝 Données de modification:', updateData);
+      console.log('=== DÉBUT MODIFICATION RAPPORT ===');
+      console.log('Report ID:', reportId);
+      console.log('Données de modification:', updateData);
       
       setLoading(true);
       setError(null);
@@ -359,11 +359,11 @@ export const useReports = (projectId?: string) => {
         body: JSON.stringify(updateData),
       });
 
-      console.log('📡 Statut modification:', response.status, response.statusText);
+      console.log('Statut modification:', response.status, response.statusText);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ Erreur modification:', errorText);
+        console.error('Erreur modification:', errorText);
         
         let errorData;
         try {
@@ -374,10 +374,10 @@ export const useReports = (projectId?: string) => {
       }
 
       const result = await response.json();
-      console.log('📡 Réponse modification:', result);
+      console.log('Réponse modification:', result);
       
       const updatedReport = extractDataFromResponse(result, 'report');
-      console.log('✅ Rapport modifié:', updatedReport);
+      console.log('Rapport modifié:', updatedReport);
 
       setReports(prev => prev.map(report => 
         report.id === reportId ? updatedReport : report
@@ -388,11 +388,11 @@ export const useReports = (projectId?: string) => {
       }
 
       toast.success('Rapport modifié avec succès');
-      console.log('✅ === FIN MODIFICATION RAPPORT (SUCCÈS) ===');
+      console.log('=== FIN MODIFICATION RAPPORT (SUCCÈS) ===');
       return updatedReport;
       
     } catch (err) {
-      console.error('❌ === ERREUR MODIFICATION RAPPORT ===', err);
+      console.error('=== ERREUR MODIFICATION RAPPORT ===', err);
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la modification du rapport';
       setError(errorMessage);
       toast.error(errorMessage);
@@ -408,9 +408,9 @@ export const useReports = (projectId?: string) => {
     sectionIds?: string[]
   ) => {
     try {
-      console.log('🔍 === RÉCUPÉRATION SECTIONS RAPPORT ===');
-      console.log('📝 Report ID:', reportId);
-      console.log('📝 Section IDs:', sectionIds);
+      console.log('=== RÉCUPÉRATION SECTIONS RAPPORT ===');
+      console.log('Report ID:', reportId);
+      console.log('Section IDs:', sectionIds);
       
       setLoading(true);
       setError(null);
@@ -420,7 +420,7 @@ export const useReports = (projectId?: string) => {
         headers: getHeaders()
       });
 
-      console.log('📡 Statut réponse sections:', response.status, response.statusText);
+      console.log('Statut réponse sections:', response.status, response.statusText);
 
       if (!response.ok) {
         throw new Error(`Erreur ${response.status}: ${response.statusText}`);
@@ -430,12 +430,12 @@ export const useReports = (projectId?: string) => {
       console.log('📡 Réponse sections:', result);
       
       const sectionsData = extractDataFromResponse(result, 'sections');
-      console.log('✅ Sections récupérées:', sectionsData);
+      console.log('Sections récupérées:', sectionsData);
       
       return sectionsData;
       
     } catch (err) {
-      console.error('❌ === ERREUR RÉCUPÉRATION SECTIONS ===', err);
+      console.error('=== ERREUR RÉCUPÉRATION SECTIONS ===', err);
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération des sections';
       setError(errorMessage);
       throw err;
@@ -449,9 +449,9 @@ export const useReports = (projectId?: string) => {
     sectionData: CreateSectionData
   ): Promise<ReportSection> => {
     try {
-      console.log('➕ === AJOUT SECTION RAPPORT ===');
-      console.log('📝 Report ID:', reportId);
-      console.log('📝 Section Data:', sectionData);
+      console.log('=== AJOUT SECTION RAPPORT ===');
+      console.log('Report ID:', reportId);
+      console.log('Section Data:', sectionData);
       
       setLoading(true);
       setError(null);
@@ -462,11 +462,11 @@ export const useReports = (projectId?: string) => {
         body: JSON.stringify(sectionData),
       });
 
-      console.log('📡 Statut ajout section:', response.status, response.statusText);
+      console.log('Statut ajout section:', response.status, response.statusText);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ Erreur ajout section:', errorText);
+        console.error('Erreur ajout section:', errorText);
         
         let errorData;
         try {
@@ -477,10 +477,10 @@ export const useReports = (projectId?: string) => {
       }
 
       const result = await response.json();
-      console.log('📡 Réponse ajout section:', result);
+      console.log('Réponse ajout section:', result);
       
       const newSection = extractDataFromResponse(result, 'section');
-      console.log('✅ Section ajoutée:', newSection);
+      console.log('Section ajoutée:', newSection);
 
       if (currentReport?.id === reportId) {
         setCurrentReport(prev => prev ? {
@@ -490,11 +490,11 @@ export const useReports = (projectId?: string) => {
       }
 
       toast.success('Section ajoutée avec succès');
-      console.log('✅ === FIN AJOUT SECTION (SUCCÈS) ===');
+      console.log('=== FIN AJOUT SECTION (SUCCÈS) ===');
       return newSection;
       
     } catch (err) {
-      console.error('❌ === ERREUR AJOUT SECTION ===', err);
+      console.error('=== ERREUR AJOUT SECTION ===', err);
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors de l\'ajout de la section';
       setError(errorMessage);
       toast.error(errorMessage);
@@ -509,9 +509,9 @@ export const useReports = (projectId?: string) => {
     updateData: UpdateSectionData
   ): Promise<ReportSection> => {
     try {
-      console.log('✏️ === MODIFICATION SECTION ===');
-      console.log('📝 Section ID:', sectionId);
-      console.log('📝 Update Data:', updateData);
+      console.log('=== MODIFICATION SECTION ===');
+      console.log('Section ID:', sectionId);
+      console.log('Update Data:', updateData);
       
       setLoading(true);
       setError(null);
@@ -522,11 +522,11 @@ export const useReports = (projectId?: string) => {
         body: JSON.stringify(updateData),
       });
 
-      console.log('📡 Statut modification section:', response.status, response.statusText);
+      console.log('Statut modification section:', response.status, response.statusText);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ Erreur modification section:', errorText);
+        console.error('Erreur modification section:', errorText);
         
         let errorData;
         try {
@@ -537,10 +537,10 @@ export const useReports = (projectId?: string) => {
       }
 
       const result = await response.json();
-      console.log('📡 Réponse modification section:', result);
+      console.log('Réponse modification section:', result);
       
       const updatedSection = extractDataFromResponse(result, 'section');
-      console.log('✅ Section modifiée:', updatedSection);
+      console.log('section modifiée:', updatedSection);
 
       if (currentReport) {
         setCurrentReport(prev => prev ? {
@@ -552,11 +552,11 @@ export const useReports = (projectId?: string) => {
       }
 
       toast.success('Section modifiée avec succès');
-      console.log('✅ === FIN MODIFICATION SECTION (SUCCÈS) ===');
+      console.log('=== FIN MODIFICATION SECTION (SUCCÈS) ===');
       return updatedSection;
       
     } catch (err) {
-      console.error('❌ === ERREUR MODIFICATION SECTION ===', err);
+      console.error(' === ERREUR MODIFICATION SECTION ===', err);
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la modification de la section';
       setError(errorMessage);
       toast.error(errorMessage);
@@ -569,7 +569,7 @@ export const useReports = (projectId?: string) => {
 
   const deleteReportSection = useCallback(async (sectionId: string): Promise<void> => {
     try {
-      console.log('🗑️ === SUPPRESSION SECTION ===', sectionId);
+      console.log('=== SUPPRESSION SECTION ===', sectionId);
       
       setLoading(true);
       setError(null);
@@ -579,11 +579,11 @@ export const useReports = (projectId?: string) => {
         headers: getHeaders(),
       });
 
-      console.log('📡 Statut suppression section:', response.status, response.statusText);
+      console.log('Statut suppression section:', response.status, response.statusText);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ Erreur suppression section:', errorText);
+        console.error('Erreur suppression section:', errorText);
         
         let errorData;
         try {
@@ -601,10 +601,10 @@ export const useReports = (projectId?: string) => {
       }
 
       toast.success('Section supprimée avec succès');
-      console.log('✅ === FIN SUPPRESSION SECTION (SUCCÈS) ===');
+      console.log('=== FIN SUPPRESSION SECTION (SUCCÈS) ===');
       
     } catch (err) {
-      console.error('❌ === ERREUR SUPPRESSION SECTION ===', err);
+      console.error('=== ERREUR SUPPRESSION SECTION ===', err);
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la suppression de la section';
       setError(errorMessage);
       toast.error(errorMessage);
@@ -619,9 +619,9 @@ export const useReports = (projectId?: string) => {
     sectionOrder: string[]
   ): Promise<Report> => {
     try {
-      console.log('🔄 === RÉORGANISATION SECTIONS ===');
-      console.log('📝 Report ID:', reportId);
-      console.log('📝 Section Order:', sectionOrder);
+      console.log('=== RÉORGANISATION SECTIONS ===');
+      console.log('Report ID:', reportId);
+      console.log('Section Order:', sectionOrder);
       
       setLoading(true);
       setError(null);
@@ -636,7 +636,7 @@ export const useReports = (projectId?: string) => {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ Erreur réorganisation:', errorText);
+        console.error('Erreur réorganisation:', errorText);
         
         let errorData;
         try {
@@ -647,10 +647,10 @@ export const useReports = (projectId?: string) => {
       }
 
       const result = await response.json();
-      console.log('📡 Réponse réorganisation:', result);
+      console.log('Réponse réorganisation:', result);
       
       const updatedReport = extractDataFromResponse(result, 'report');
-      console.log('✅ Sections réorganisées:', updatedReport);
+      console.log('Sections réorganisées:', updatedReport);
 
       if (currentReport?.id === reportId) {
         setCurrentReport(updatedReport);
@@ -661,11 +661,11 @@ export const useReports = (projectId?: string) => {
       ));
 
       toast.success('Sections réorganisées avec succès');
-      console.log('✅ === FIN RÉORGANISATION SECTIONS (SUCCÈS) ===');
+      console.log('=== FIN RÉORGANISATION SECTIONS (SUCCÈS) ===');
       return updatedReport;
       
     } catch (err) {
-      console.error('❌ === ERREUR RÉORGANISATION SECTIONS ===', err);
+      console.error('=== ERREUR RÉORGANISATION SECTIONS ===', err);
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la réorganisation des sections';
       setError(errorMessage);
       toast.error(errorMessage);
@@ -675,16 +675,15 @@ export const useReports = (projectId?: string) => {
     }
   }, [API_BASE_URL, currentReport]);
 
-  // ===== NAVIGATION =====
 
   const fetchReportNavigation = useCallback(async (
     projectId: string,
     reportId: string
   ): Promise<ReportNavigation> => {
     try {
-      console.log('🧭 === RÉCUPÉRATION NAVIGATION RAPPORT ===');
-      console.log('📝 Project ID:', projectId);
-      console.log('📝 Report ID:', reportId);
+      console.log(' === RÉCUPÉRATION NAVIGATION RAPPORT ===');
+      console.log(' Project ID:', projectId);
+      console.log(' Report ID:', reportId);
       
       setLoading(true);
       setError(null);
@@ -693,25 +692,25 @@ export const useReports = (projectId?: string) => {
         headers: getHeaders()
       });
 
-      console.log('📡 Statut navigation:', response.status, response.statusText);
+      console.log(' Statut navigation:', response.status, response.statusText);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ Erreur navigation:', errorText);
+        console.error(' Erreur navigation:', errorText);
         throw new Error(`Erreur ${response.status}: ${response.statusText}`);
       }
 
       const result = await response.json();
-      console.log('📡 Réponse navigation:', result);
+      console.log(' Réponse navigation:', result);
       
       const navigationData = extractDataFromResponse(result, 'navigation');
-      console.log('✅ Navigation récupérée:', navigationData);
+      console.log('Navigation récupérée:', navigationData);
       
       setNavigation(navigationData);
       return navigationData;
       
     } catch (err) {
-      console.error('❌ === ERREUR RÉCUPÉRATION NAVIGATION ===', err);
+      console.error(' === ERREUR RÉCUPÉRATION NAVIGATION ===', err);
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la récupération de la navigation';
       setError(errorMessage);
       throw err;
@@ -783,18 +782,18 @@ export const useReports = (projectId?: string) => {
   }, [API_BASE_URL]);
 
   useEffect(() => {
-    console.log('🚀 === MONTAGE DU HOOK useReports ===');
-    console.log('📝 Project ID:', projectId);
+    console.log(' === MONTAGE DU HOOK useReports ===');
+    console.log(' Project ID:', projectId);
     
     if (projectId && projectId !== 'undefined') {
       fetchProjectReports(projectId).catch(console.error);
     } else {
-      console.warn('⚠️ Project ID invalide ou non fourni:', projectId);
+      console.warn('roject ID invalide ou non fourni:', projectId);
     }
   }, [projectId, fetchProjectReports]);
 
   const refreshData = useCallback(() => {
-    console.log('🔄 === RAFRAÎCHISSEMENT DES DONNÉES ===');
+    console.log('=== RAFRAÎCHISSEMENT DES DONNÉES ===');
     if (projectId) {
       return fetchProjectReports(projectId);
     }
@@ -813,10 +812,10 @@ export const useReports = (projectId?: string) => {
     publishedReports: reports.filter(r => r.status === 'published').length,
   };
 
-  console.log('📊 === STATISTIQUES RAPPORTS ===');
-  console.log('📊 Stats:', stats);
-  console.log('📊 Loading:', loading);
-  console.log('📊 Error:', error);
+  console.log(' === STATISTIQUES RAPPORTS ===');
+  console.log(' Stats:', stats);
+  console.log(' Loading:', loading);
+  console.log(' Error:', error);
 
   return {
     reports,
