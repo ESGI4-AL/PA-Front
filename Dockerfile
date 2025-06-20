@@ -1,6 +1,5 @@
 FROM node:18-alpine AS builder
 
-# Permet de passer la variable d’environnement au moment du build
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 
@@ -10,7 +9,7 @@ COPY tsconfig*.json ./
 COPY vite.config.ts ./
 COPY . .
 
-RUN npm install
+RUN npm install --legacy-peer-deps
 RUN npm run build
 
 FROM nginx:alpine

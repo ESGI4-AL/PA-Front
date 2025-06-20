@@ -179,7 +179,13 @@ const StudentsList: React.FC<StudentsListProps> = ({
             if (!open) setStudentToEdit(null);
           }}
           student={studentToEdit}
-          onUpdateStudent={(data) => onUpdateStudent(studentToEdit.id, data)}
+          onUpdateStudent={(data) =>
+            onUpdateStudent(studentToEdit.id, {
+              firstName: data.firstName ?? "",
+              lastName: data.lastName ?? "",
+              email: data.email ?? ""
+            })
+          }
         />
       )}
 
