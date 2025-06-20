@@ -69,7 +69,6 @@ const TeacherProjectPresentationsTab: React.FC = () => {
         return;
       }
       
-      // Fallback vers l'endpoint groupes si nécessaire
       const groupsResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/projects/${projectId}/groups`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
@@ -89,7 +88,6 @@ const TeacherProjectPresentationsTab: React.FC = () => {
     }
   }, [projectId]);
 
-  // Formatage des données pour l'affichage
   const formatTime = (timeString: string) => {
     try {
       return new Date(timeString).toLocaleTimeString('fr-FR', {
@@ -115,7 +113,6 @@ const TeacherProjectPresentationsTab: React.FC = () => {
     }
   };
 
-  // Gestion du drag & drop
   const handleDragEnd = async (result: DropResult) => {
     try {
       if (!result.destination) return;
@@ -132,17 +129,14 @@ const TeacherProjectPresentationsTab: React.FC = () => {
     }
   };
 
-  // Création d'un nouveau planning avec validation
   const handleCreateSchedule = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
-      // Validation du projectId avant création
       if (!projectId || projectId === 'undefined') {
         throw new Error('ID du projet invalide');
       }
       
-      // Validation des données du formulaire
       if (!scheduleForm.startTime) {
         throw new Error('Date et heure de début requises');
       }
@@ -164,16 +158,13 @@ const TeacherProjectPresentationsTab: React.FC = () => {
       setScheduleForm({ startTime: '', duration: 20, endTime: '' });
     } catch (error) {
       console.error('Erreur lors de la création du planning:', error);
-      // L'erreur est gérée par le hook et affichée via toast
     }
   };
 
-  // Modification du planning existant
   const handleUpdateSchedule = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
-      // Validation des données du formulaire
       if (!scheduleForm.startTime) {
         throw new Error('Date et heure de début requises');
       }
@@ -195,11 +186,9 @@ const TeacherProjectPresentationsTab: React.FC = () => {
       setScheduleForm({ startTime: '', duration: 20, endTime: '' });
     } catch (error) {
       console.error('Erreur lors de la modification du planning:', error);
-      // L'erreur est gérée par le hook et affichée via toast
     }
   };
 
-  // Ouverture du dialog de modification avec les valeurs actuelles
   const openUpdateDialog = () => {
     try {
       if (schedules.length > 0) {
@@ -218,14 +207,12 @@ const TeacherProjectPresentationsTab: React.FC = () => {
     }
   };
 
-  // Suppression du planning
   const handleDeleteSchedule = async () => {
     try {
       await deleteSchedule();
       setIsDeleteDialogOpen(false);
     } catch (error) {
       console.error('Erreur lors de la suppression:', error);
-      // L'erreur est déjà gérée dans le hook
     }
   };
 
@@ -239,7 +226,7 @@ const TeacherProjectPresentationsTab: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* En-tête */}
+      {}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Soutenances</h2>
@@ -489,7 +476,7 @@ const TeacherProjectPresentationsTab: React.FC = () => {
         </div>
       </div>
 
-      {/* Alerte spécifique pour l'absence de groupes */}
+      {}
       {hasGroups === false && (
         <Alert className="mb-6">
           <Users className="h-4 w-4" />
@@ -505,7 +492,7 @@ const TeacherProjectPresentationsTab: React.FC = () => {
         </Alert>
       )}
 
-      {/* Gestion des erreurs */}
+      {}
       {error && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
@@ -513,7 +500,7 @@ const TeacherProjectPresentationsTab: React.FC = () => {
         </Alert>
       )}
 
-      {/* Vérification des prérequis pour les soutenances */}
+      {}
       {schedules.length === 0 && !loading && !error && hasGroups !== false && (
         <Alert className="mb-6">
           <AlertCircle className="h-4 w-4" />
@@ -529,7 +516,7 @@ const TeacherProjectPresentationsTab: React.FC = () => {
         </Alert>
       )}
 
-      {/* Liste des soutenances ou état vide */}
+      {}
       {schedules.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
