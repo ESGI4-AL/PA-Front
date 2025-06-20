@@ -413,7 +413,7 @@ export const useGroups = (projectId: string) => {
         body: JSON.stringify(updateData)
       });
       
-      console.log('📡 Statut modification:', response.status, response.statusText);
+      console.log('Statut modification:', response.status, response.statusText);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -491,11 +491,11 @@ export const useGroups = (projectId: string) => {
       }
       
       const groupToDelete = groups.find(g => g.id === groupId);
-      console.log('🔍 Groupe à supprimer:', groupToDelete);
+      console.log('Groupe à supprimer:', groupToDelete);
       
       setGroups(prev => {
         const filtered = Array.isArray(prev) ? prev.filter(g => g.id !== groupId) : [];
-        console.log('🔄 Groupes après suppression:', filtered.length);
+        console.log('Groupes après suppression:', filtered.length);
         return filtered;
       });
       
@@ -661,7 +661,7 @@ export const useGroups = (projectId: string) => {
       console.log('=== FIN ASSIGNATION AUTOMATIQUE (SUCCÈS) ===');
       return result;
     } catch (error) {
-      console.error('❌ === ERREUR ASSIGNATION AUTOMATIQUE ===', error);
+      console.error('=== ERREUR ASSIGNATION AUTOMATIQUE ===', error);
       const errorMessage = error instanceof Error ? error.message : 'Erreur lors de l\'assignation automatique';
       toast.error(errorMessage);
       throw error;
