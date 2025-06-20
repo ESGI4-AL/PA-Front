@@ -1,23 +1,120 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import {
+  useSortable,
+} from '@dnd-kit/sortable';
+import {
+  CSS,
+} from '@dnd-kit/utilities';
 import { Calendar, Clock, Users, Download, FileText, GripVertical, Plus, Settings, AlertCircle, Trash2, Edit } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../../../shared/components/ui/card';
 import { Button } from '../../../../../shared/components/ui/button';
 import { Badge } from '../../../../../shared/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '../../../../../shared/components/ui/dialog';
 import { Input } from '../../../../../shared/components/ui/input';
-import { Label } from '../../../../../shared/components/ui/label';
+import { Label } from '@/shared/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../../../shared/components/ui/select';
 import { Alert, AlertDescription } from '../../../../../shared/components/ui/alert';
 import { usePresentations } from '../../hooks/usePresentations';
 import { PresentationSchedule } from '../../../../../domains/project/models/presentationModels';
 import { toast } from 'sonner';
 
+interface SortableItemProps {
+  schedule: PresentationSchedule;
+  formatDate: (timeString: string) => string;
+  formatTime: (timeString: string) => string;
+}
+
+const SortableItem: React.FC<SortableItemProps> = ({ schedule, formatDate, formatTime }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: schedule.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`
+        flex items-center gap-4 p-4 border rounded-lg bg-white transition-all
+        ${isDragging ? 'shadow-lg border-blue-300 opacity-50' : 'hover:shadow-md'}
+      `}
+    >
+      <div
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600"
+      >
+        <GripVertical className="h-5 w-5" />
+      </div>
+
+      <div className="flex-1 grid grid-cols-4 gap-4 items-center">
+        <div>
+          <p className="font-medium">
+            {schedule.group?.name || `Groupe ${schedule.groupId}`}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Ordre: {schedule.order}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-blue-500" />
+          <span className="text-sm">
+            {formatDate(schedule.startTime)}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Clock className="h-4 w-4 text-green-500" />
+          <span className="text-sm">
+            {formatTime(schedule.startTime)} - {formatTime(schedule.endTime)}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Badge variant="outline">
+            {schedule.duration} min
+          </Badge>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const TeacherProjectPresentationsTab: React.FC = () => {
-  
   const { id: projectId } = useParams<{ id: string }>();
-  
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   if (!projectId || projectId === 'undefined') {
     return (
@@ -31,16 +128,17 @@ const TeacherProjectPresentationsTab: React.FC = () => {
       </div>
     );
   }
-  const { 
-    schedules, 
-    loading, 
-    error, 
+
+  const {
+    schedules,
+    loading,
+    error,
     createSchedule,
     updateSchedule,
     reorderSchedule,
     deleteSchedule,
-    downloadSchedulePDF, 
-    downloadAttendanceSheet 
+    downloadSchedulePDF,
+    downloadAttendanceSheet
   } = usePresentations(projectId || '');
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -63,12 +161,12 @@ const TeacherProjectPresentationsTab: React.FC = () => {
         }
       });
       const projectResult = await projectResponse.json();
-      
+
       if (projectResult.data && projectResult.data.groups) {
         setHasGroups(projectResult.data.groups.length > 0);
         return;
       }
-      
+
       const groupsResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/projects/${projectId}/groups`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
@@ -113,15 +211,20 @@ const TeacherProjectPresentationsTab: React.FC = () => {
     }
   };
 
-  const handleDragEnd = async (result: DropResult) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
     try {
-      if (!result.destination) return;
+      const oldIndex = schedules.findIndex((item) => item.id === active.id);
+      const newIndex = schedules.findIndex((item) => item.id === over.id);
 
-      const items = Array.from(schedules);
-      const [reorderedItem] = items.splice(result.source.index, 1);
-      items.splice(result.destination.index, 0, reorderedItem);
+      const newSchedules = arrayMove(schedules, oldIndex, newIndex);
+      const groupOrder = newSchedules.map(item => item.groupId);
 
-      const groupOrder = items.map(item => item.groupId);
       await reorderSchedule(groupOrder);
     } catch (error) {
       console.error('Erreur lors du réordonnancement:', error);
@@ -131,28 +234,28 @@ const TeacherProjectPresentationsTab: React.FC = () => {
 
   const handleCreateSchedule = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       if (!projectId || projectId === 'undefined') {
         throw new Error('ID du projet invalide');
       }
-      
+
       if (!scheduleForm.startTime) {
         throw new Error('Date et heure de début requises');
       }
-      
+
       if (scheduleMode === 'duration' && (!scheduleForm.duration || scheduleForm.duration <= 0)) {
         throw new Error('Durée invalide');
       }
-      
+
       if (scheduleMode === 'endTime' && !scheduleForm.endTime) {
         throw new Error('Heure de fin requise');
       }
-      
-      const scheduleData = scheduleMode === 'duration' 
+
+      const scheduleData = scheduleMode === 'duration'
         ? { startTime: scheduleForm.startTime, duration: scheduleForm.duration }
         : { startTime: scheduleForm.startTime, endTime: scheduleForm.endTime };
-      
+
       await createSchedule(scheduleData);
       setIsCreateDialogOpen(false);
       setScheduleForm({ startTime: '', duration: 20, endTime: '' });
@@ -163,24 +266,24 @@ const TeacherProjectPresentationsTab: React.FC = () => {
 
   const handleUpdateSchedule = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       if (!scheduleForm.startTime) {
         throw new Error('Date et heure de début requises');
       }
-      
+
       if (scheduleMode === 'duration' && (!scheduleForm.duration || scheduleForm.duration <= 0)) {
         throw new Error('Durée invalide');
       }
-      
+
       if (scheduleMode === 'endTime' && !scheduleForm.endTime) {
         throw new Error('Heure de fin requise');
       }
-      
-      const scheduleData = scheduleMode === 'duration' 
+
+      const scheduleData = scheduleMode === 'duration'
         ? { startTime: scheduleForm.startTime, duration: scheduleForm.duration }
         : { startTime: scheduleForm.startTime, endTime: scheduleForm.endTime };
-      
+
       await updateSchedule(scheduleData);
       setIsUpdateDialogOpen(false);
       setScheduleForm({ startTime: '', duration: 20, endTime: '' });
@@ -226,7 +329,6 @@ const TeacherProjectPresentationsTab: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Soutenances</h2>
@@ -237,8 +339,8 @@ const TeacherProjectPresentationsTab: React.FC = () => {
         <div className="flex items-center gap-2">
           {schedules.length > 0 && (
             <>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => downloadAttendanceSheet('group')}
                 className="gap-2"
                 disabled={loading}
@@ -246,8 +348,8 @@ const TeacherProjectPresentationsTab: React.FC = () => {
                 <Users className="h-4 w-4" />
                 Liste par groupes
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => downloadAttendanceSheet('alphabetical')}
                 className="gap-2"
                 disabled={loading}
@@ -255,8 +357,8 @@ const TeacherProjectPresentationsTab: React.FC = () => {
                 <FileText className="h-4 w-4" />
                 Liste alphabétique
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={downloadSchedulePDF}
                 className="gap-2"
                 disabled={loading}
@@ -264,7 +366,7 @@ const TeacherProjectPresentationsTab: React.FC = () => {
                 <Download className="h-4 w-4" />
                 Télécharger PDF
               </Button>
-              <Button 
+              <Button
                 variant="outline"
                 onClick={openUpdateDialog}
                 className="gap-2"
@@ -275,7 +377,7 @@ const TeacherProjectPresentationsTab: React.FC = () => {
               </Button>
               <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button 
+                  <Button
                     variant="outline"
                     className="gap-2 border-red-200 text-red-600 hover:bg-red-50"
                     disabled={loading}
@@ -288,19 +390,19 @@ const TeacherProjectPresentationsTab: React.FC = () => {
                   <DialogHeader>
                     <DialogTitle>Supprimer le planning</DialogTitle>
                     <DialogDescription>
-                      Êtes-vous sûr de vouloir supprimer le planning des soutenances ? 
+                      Êtes-vous sûr de vouloir supprimer le planning des soutenances ?
                       Cette action est irréversible.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="flex justify-end gap-2 pt-4">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={() => setIsDeleteDialogOpen(false)}
                     >
                       Annuler
                     </Button>
-                    <Button 
-                      variant="destructive" 
+                    <Button
+                      variant="destructive"
                       onClick={handleDeleteSchedule}
                       disabled={loading}
                     >
@@ -313,8 +415,8 @@ const TeacherProjectPresentationsTab: React.FC = () => {
           )}
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
-              <Button 
-                className="gap-2" 
+              <Button
+                className="gap-2"
                 disabled={hasGroups === false}
                 title={hasGroups === false ? "Créez d'abord des groupes dans l'onglet Groupes" : ""}
               >
@@ -340,11 +442,11 @@ const TeacherProjectPresentationsTab: React.FC = () => {
                     required
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="scheduleMode">Mode de planification</Label>
-                  <Select 
-                    value={scheduleMode} 
+                  <Select
+                    value={scheduleMode}
                     onValueChange={(value: 'duration' | 'endTime') => setScheduleMode(value)}
                   >
                     <SelectTrigger>
@@ -384,9 +486,9 @@ const TeacherProjectPresentationsTab: React.FC = () => {
                 )}
 
                 <div className="flex justify-end gap-2 pt-4">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
+                  <Button
+                    type="button"
+                    variant="outline"
                     onClick={() => setIsCreateDialogOpen(false)}
                   >
                     Annuler
@@ -415,11 +517,11 @@ const TeacherProjectPresentationsTab: React.FC = () => {
                     required
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="updateScheduleMode">Mode de planification</Label>
-                  <Select 
-                    value={scheduleMode} 
+                  <Select
+                    value={scheduleMode}
                     onValueChange={(value: 'duration' | 'endTime') => setScheduleMode(value)}
                   >
                     <SelectTrigger>
@@ -459,9 +561,9 @@ const TeacherProjectPresentationsTab: React.FC = () => {
                 )}
 
                 <div className="flex justify-end gap-2 pt-4">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
+                  <Button
+                    type="button"
+                    variant="outline"
                     onClick={() => setIsUpdateDialogOpen(false)}
                   >
                     Annuler
@@ -476,7 +578,6 @@ const TeacherProjectPresentationsTab: React.FC = () => {
         </div>
       </div>
 
-      {}
       {hasGroups === false && (
         <Alert className="mb-6">
           <Users className="h-4 w-4" />
@@ -492,7 +593,6 @@ const TeacherProjectPresentationsTab: React.FC = () => {
         </Alert>
       )}
 
-      {}
       {error && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
@@ -500,7 +600,6 @@ const TeacherProjectPresentationsTab: React.FC = () => {
         </Alert>
       )}
 
-      {}
       {schedules.length === 0 && !loading && !error && hasGroups !== false && (
         <Alert className="mb-6">
           <AlertCircle className="h-4 w-4" />
@@ -516,7 +615,6 @@ const TeacherProjectPresentationsTab: React.FC = () => {
         </Alert>
       )}
 
-      {}
       {schedules.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
@@ -529,8 +627,8 @@ const TeacherProjectPresentationsTab: React.FC = () => {
                 Assurez-vous d'avoir créé des groupes dans l'onglet "Groupes" avant de continuer.
               </span>
             </p>
-            <Button 
-              onClick={() => setIsCreateDialogOpen(true)} 
+            <Button
+              onClick={() => setIsCreateDialogOpen(true)}
               className="gap-2"
               disabled={hasGroups === false}
               title={hasGroups === false ? "Créez d'abord des groupes dans l'onglet Groupes" : ""}
@@ -563,77 +661,28 @@ const TeacherProjectPresentationsTab: React.FC = () => {
                 <strong>Interface d'arrangement manuel :</strong> Glissez-déposez les éléments ci-dessous pour réorganiser l'ordre des passages
               </p>
             </div>
-            
-            <DragDropContext onDragEnd={handleDragEnd}>
-              <Droppable droppableId="presentations">
-                {(provided) => (
-                  <div
-                    {...provided.droppableProps}
-                    ref={provided.innerRef}
-                    className="space-y-3"
-                  >
-                    {schedules.map((schedule, index) => (
-                      <Draggable 
-                        key={schedule.id} 
-                        draggableId={schedule.id} 
-                        index={index}
-                      >
-                        {(provided, snapshot) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            className={`
-                              flex items-center gap-4 p-4 border rounded-lg bg-white transition-all
-                              ${snapshot.isDragging ? 'shadow-lg border-blue-300' : 'hover:shadow-md'}
-                            `}
-                          >
-                            <div
-                              {...provided.dragHandleProps}
-                              className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600"
-                            >
-                              <GripVertical className="h-5 w-5" />
-                            </div>
-                            
-                            <div className="flex-1 grid grid-cols-4 gap-4 items-center">
-                              <div>
-                                <p className="font-medium">
-                                  {schedule.group?.name || `Groupe ${schedule.groupId}`}
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                  Ordre: {schedule.order}
-                                </p>
-                              </div>
-                              
-                              <div className="flex items-center gap-2">
-                                <Calendar className="h-4 w-4 text-blue-500" />
-                                <span className="text-sm">
-                                  {formatDate(schedule.startTime)}
-                                </span>
-                              </div>
-                              
-                              <div className="flex items-center gap-2">
-                                <Clock className="h-4 w-4 text-green-500" />
-                                <span className="text-sm">
-                                  {formatTime(schedule.startTime)} - {formatTime(schedule.endTime)}
-                                </span>
-                              </div>
-                              
-                              <div className="flex items-center gap-2">
-                                <Badge variant="outline">
-                                  {schedule.duration} min
-                                </Badge>
-                                {}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
-            </DragDropContext>
+
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={schedules.map(s => s.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-3">
+                  {schedules.map((schedule) => (
+                    <SortableItem
+                      key={schedule.id}
+                      schedule={schedule}
+                      formatDate={formatDate}
+                      formatTime={formatTime}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
           </CardContent>
         </Card>
       )}
