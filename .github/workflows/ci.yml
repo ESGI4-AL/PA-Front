@@ -1,5 +1,4 @@
 name: CI Front
-
 on:
   push:
     branches: ["**"]
@@ -8,58 +7,71 @@ on:
 
 jobs:
   lint:
-    name: 🔍 Lint
+    name: Lint & Code Quality
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Check code
+        uses: actions/checkout@v4
 
-      - name: 🟢 Setup Node.js
-        uses: actions/setup-node@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
+          cache: 'npm'
 
-      - name: 📦 Install deps
-        run: npm install
+      - name: Install dependencies
+        run: npm ci
 
-      - name: 🔎 Run Lint
+      - name: Run ESLint
         run: npm run lint
 
-  test:
-    name: 🧪 Tests (fictif pour l'instant)
+  build-and-check:
+    name: Build & TypeScript Check
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
-      - uses: actions/checkout@v3
+      - name: Check code
+        uses: actions/checkout@v4
 
-      - name: 🟢 Setup Node.js
-        uses: actions/setup-node@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
+          cache: 'npm'
 
-      - name: 📦 Install deps
-        run: npm install
+      - name: Install dependencies
+        run: npm ci
 
-      - name: 🚨 Dummy test (à remplacer plus tard)
-        run: echo "No tests yet" && exit 1
+      - name: TypeScript Check
+        run: npx tsc --noEmit
 
-  docker:
-    name: 🐳 Build & Push Docker image
-    needs: [lint, test]
+      - name: Build Project
+        run: npm run build
+
+      - name: Check Build Output
+        run: |
+          echo "Build completed successfully!"
+          if [ -d "dist" ]; then
+            echo "Build size:"
+            du -sh dist/
+            echo "Build contents:"
+            ls -la dist/
+          fi
+
+  security:
+    name: Security Audit
     runs-on: ubuntu-latest
-
     steps:
-      - name: 🔄 Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: 🔐 Log in to Docker Hub
-        uses: docker/login-action@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          node-version: 20
+          cache: 'npm'
 
-      - name: 🏗️ Build & push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/pa-front:latest
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run security audit
+        run: npm audit --audit-level moderate
