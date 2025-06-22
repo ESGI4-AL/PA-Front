@@ -21,7 +21,6 @@ const StudentProjecTabPage: React.FC = () => {
 
   const {
     fetchProjectById,
-    currentProject,
     loading,
     error,
     clearError
@@ -120,7 +119,7 @@ const StudentProjecTabPage: React.FC = () => {
         </TabsList>
 
         <TabsContent value="detail">
-          <StudentProjectDetailTab />
+          <StudentProjectDetailTab projectId={id} />
         </TabsContent>
 
         <TabsContent value="group">

@@ -10,7 +10,7 @@ import {
 
 export const useStudentProjects = () => {
   const [projects, setProjects] = useState<StudentProject[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
   const [totalItems, setTotalItems] = useState<number>(0);
