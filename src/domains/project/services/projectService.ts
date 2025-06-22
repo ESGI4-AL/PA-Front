@@ -1,4 +1,4 @@
-import { Project, CreateProjectData, UpdateProjectData, ProjectStatus } from '../models/projectModels';
+import { Project, CreateProjectData, UpdateProjectData, ProjectStatus, StudentProjectsResponse } from '../models/projectModels';
 import { getAuthToken } from '../../user/services/authService';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
@@ -57,7 +57,7 @@ export const getAllProjects = async (
 
     const data = await handleApiResponse(response);
     return {
-      projects: data.projects || data, // Handle different response structures
+      projects: data.projects || data,
       totalPages: data.totalPages || 1,
       currentPage: data.currentPage || 1
     };
@@ -78,6 +78,36 @@ export const getProjectById = async (id: string): Promise<Project> => {
     return handleApiResponse(response);
   } catch (error) {
     console.error(`Erreur lors de la récupération du projet avec l'ID ${id}:`, error);
+    throw error;
+  }
+};
+
+export const getMyProjects = async (filters: {
+  search?: string;
+  page?: number;
+  limit?: number;
+} = {}): Promise<StudentProjectsResponse> => {
+  try {
+    const queryParams = new URLSearchParams();
+    if (filters.search) queryParams.append('search', filters.search);
+    if (filters.page) queryParams.append('page', filters.page.toString());
+    if (filters.limit) queryParams.append('limit', filters.limit.toString());
+
+    const response = await fetch(`${API_URL}/projects/my-projects?${queryParams.toString()}`, {
+      headers: {
+        ...getAuthHeaders()
+      }
+    });
+
+    const data = await handleApiResponse(response);
+    return {
+      projects: data.projects || [],
+      totalItems: data.totalItems || 0,
+      totalPages: data.totalPages || 1,
+      currentPage: data.currentPage || 1
+    };
+  } catch (error) {
+    console.error('Erreur lors de la récupération de mes projets:', error);
     throw error;
   }
 };
