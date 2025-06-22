@@ -6,7 +6,7 @@ import PromotionCreatePage from '../promotions/pages/PromotionCreatePage';
 import PromotionEditPage from '../promotions/pages/PromotionEditPage';
 import TeacherProjectsListPage from '../projects/pages/TeacherProjectsListPage';
 import TeacherProjectsCreatePage from '../projects/pages/TeacherProjectsCreatePage';
-import TeacherProjectsSettingsPage from '../projects/pages/TeacherProjectsSettingsPage';
+import TeacherProjectsTabPage from '../projects/pages/TeacherProjectsTabPage';
 import NotificationsPage from '@/features/common/pages/NotificationsPage';
 import SettingsPage from '@/features/common/pages/SettingsPage';
 import ProfilePage from '@/features/common/pages/ProfilePage';
@@ -19,7 +19,7 @@ const TeacherRoutes = (
     <Route path="promotions/:id/edit" element={<PromotionEditPage />} />
     <Route path="projects" element={<TeacherProjectsListPage />} />
     <Route path="projects/create" element={<TeacherProjectsCreatePage />} />
-    <Route path="projects/:id/detail" element={<TeacherProjectsSettingsPage />} />
+    <Route path="projects/:id/detail" element={<TeacherProjectsTabPage />} />
 
     <Route path="notifications" element={<NotificationsPage />} />
     <Route path="settings" element={<SettingsPage />} />

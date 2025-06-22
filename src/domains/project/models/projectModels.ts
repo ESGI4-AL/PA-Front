@@ -54,3 +54,30 @@ export interface ProjectListResponse {
   page?: number;
   limit?: number;
 }
+
+export interface StudentProject extends Project {
+  myGroup: {
+    id: string;
+    name: string;
+  };
+  teacher?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  deliverables?: Array<{
+    id: string;
+    name: string;
+    description?: string;
+    deadline: Date | string;
+    type: string;
+  }>;
+}
+
+export interface StudentProjectsResponse {
+  projects: StudentProject[];
+  totalItems: number;
+  totalPages: number;
+  currentPage: number;
+}

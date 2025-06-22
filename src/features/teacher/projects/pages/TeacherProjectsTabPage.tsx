@@ -10,7 +10,6 @@ import { UpdateProjectData } from "@/domains/project/models/projectModels";
 import { getPromotions } from "@/domains/promotion/services/promotionService";
 
 import TeacherProjectForm from "../components/TeacherProjectForm";
-import TeacherProjectOverviewTab from "../components/Overview/TeacherProjectOverviewTab";
 import TeacherProjectGroupsTab from "../components/Groups/TeacherProjectGroupsTab";
 import TeacherProjectDeliverablesTab from "../components/Deliverables/TeacherProjectDeliverablesTab";
 import TeacherProjectReportTab from "../components/Repports/TeacherProjectReportsTab";
@@ -18,10 +17,10 @@ import TeacherProjectPresentationsTab from "../components/Presentations/TeacherP
 import TeacherProjectEvaluationTab from "../components/Evaluations/TeacherProjectEvaluationTab";
 
 
-const TeacherProjectsSettingsPage: React.FC = () => {
+const TeacherProjectsTabPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("edit");
   const [projectName, setProjectName] = useState("");
   const [promotions, setPromotions] = useState<Array<{ id: string; name: string; year: number }>>([]);
 
@@ -120,9 +119,8 @@ const TeacherProjectsSettingsPage: React.FC = () => {
         </Button>
       </div>
 
-      <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
+      <Tabs defaultValue="edit" value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-6">
-          <TabsTrigger value="overview">Aperçu</TabsTrigger>
           <TabsTrigger value="edit">Modifier</TabsTrigger>
           <TabsTrigger value="groups">Groupes</TabsTrigger>
           <TabsTrigger value="deliverables">Livrables</TabsTrigger>
@@ -130,10 +128,6 @@ const TeacherProjectsSettingsPage: React.FC = () => {
           <TabsTrigger value="presentations">Soutenances</TabsTrigger>
           <TabsTrigger value="evaluations">Évaluations</TabsTrigger>
         </TabsList>
-
-        <TabsContent value="overview">
-          <TeacherProjectOverviewTab />
-        </TabsContent>
 
         <TabsContent value="edit">
           <TeacherProjectForm
@@ -171,4 +165,4 @@ const TeacherProjectsSettingsPage: React.FC = () => {
   );
 };
 
-export default TeacherProjectsSettingsPage;
+export default TeacherProjectsTabPage;
