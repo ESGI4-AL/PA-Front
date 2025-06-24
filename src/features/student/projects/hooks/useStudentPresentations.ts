@@ -21,14 +21,12 @@ export const useStudentPresentations = (projectId: string) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fonction simplifiée pour récupérer le groupe de l'utilisateur
   const fetchUserGroup = async () => {
     if (!projectId) return;
 
     try {
-      console.log('🔍 Récupération du groupe utilisateur pour le projet:', projectId);
+      console.log('Récupération du groupe utilisateur pour le projet:', projectId);
       
-      // Appel direct à l'endpoint qui retourne le groupe de l'utilisateur pour ce projet
       const response = await fetch(
         `${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/groups/project/${projectId}/user-group`,
         {
@@ -41,30 +39,27 @@ export const useStudentPresentations = (projectId: string) => {
 
       if (response.ok) {
         const result = await response.json();
-        console.log('✅ Groupe utilisateur récupéré:', result.data);
+        console.log('Groupe utilisateur récupéré:', result.data);
         setUserGroup(result.data);
       } else if (response.status === 404) {
-        // L'utilisateur n'est pas dans un groupe pour ce projet
-        console.log('ℹ️ Utilisateur non assigné à un groupe');
+        console.log('ℹUtilisateur non assigné à un groupe');
         setUserGroup(null);
       } else {
-        console.error('❌ Erreur lors de la récupération du groupe:', response.status);
+        console.error('Erreur lors de la récupération du groupe:', response.status);
         setUserGroup(null);
       }
     } catch (err: any) {
-      console.error('❌ Erreur réseau lors de la récupération du groupe:', err);
+      console.error('Erreur réseau lors de la récupération du groupe:', err);
       setUserGroup(null);
     }
   };
 
-  // Fonction alternative si l'endpoint user-group n'existe pas
   const fetchUserGroupAlternative = async () => {
     if (!projectId) return;
 
     try {
-      console.log('🔍 Récupération alternative du groupe utilisateur');
+      console.log('Récupération alternative du groupe utilisateur');
       
-      // 1. Récupérer l'utilisateur actuel
       const userResponse = await fetch(
         `${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/auth/me`,
         {
@@ -75,7 +70,7 @@ export const useStudentPresentations = (projectId: string) => {
       );
 
       if (!userResponse.ok) {
-        console.error('❌ Impossible de récupérer les infos utilisateur');
+        console.error('Impossible de récupérer les infos utilisateur');
         return;
       }
 
@@ -83,13 +78,12 @@ export const useStudentPresentations = (projectId: string) => {
       const currentUserId = userResult.data?.id;
 
       if (!currentUserId) {
-        console.error('❌ ID utilisateur non trouvé');
+        console.error('ID utilisateur non trouvé');
         return;
       }
 
       console.log('👤 Utilisateur actuel ID:', currentUserId);
 
-      // 2. Récupérer tous les groupes du projet avec leurs membres
       const groupsResponse = await fetch(
         `${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/projects/${projectId}/groups`,
         {
@@ -100,16 +94,15 @@ export const useStudentPresentations = (projectId: string) => {
       );
 
       if (!groupsResponse.ok) {
-        console.error('❌ Impossible de récupérer les groupes du projet');
+        console.error('Impossible de récupérer les groupes du projet');
         return;
       }
 
       const groupsResult = await groupsResponse.json();
       const groups = groupsResult.data || [];
 
-      console.log('📋 Groupes du projet:', groups.length);
+      console.log('Groupes du projet:', groups.length);
 
-      // 3. Chercher le groupe contenant l'utilisateur actuel
       for (const group of groups) {
         try {
           const groupDetailResponse = await fetch(
@@ -127,29 +120,26 @@ export const useStudentPresentations = (projectId: string) => {
 
             console.log(`🔍 Vérification du groupe ${groupData.name}:`, groupData.members?.length || 0, 'membres');
 
-            // Vérifier si l'utilisateur actuel est membre de ce groupe
             if (groupData.members && groupData.members.some((member: any) => member.id === currentUserId)) {
-              console.log('✅ Groupe trouvé:', groupData.name);
+              console.log('Groupe trouvé:', groupData.name);
               setUserGroup(groupData);
               return;
             }
           }
         } catch (err) {
-          console.error(`❌ Erreur lors de la récupération du groupe ${group.id}:`, err);
+          console.error(`Erreur lors de la récupération du groupe ${group.id}:`, err);
         }
       }
 
-      // Si aucun groupe trouvé
-      console.log('ℹ️ Aucun groupe trouvé pour cet utilisateur');
+      console.log('ℹAucun groupe trouvé pour cet utilisateur');
       setUserGroup(null);
 
     } catch (err: any) {
-      console.error('❌ Erreur lors de la récupération alternative du groupe:', err);
+      console.error('Erreur lors de la récupération alternative du groupe:', err);
       setUserGroup(null);
     }
   };
 
-  // Récupérer les plannings de présentation
   const fetchSchedules = async () => {
     if (!projectId) return;
 
@@ -157,12 +147,12 @@ export const useStudentPresentations = (projectId: string) => {
     setError(null);
 
     try {
-      console.log('📅 Récupération des plannings de présentation');
+      console.log('Récupération des plannings de présentation');
       const data = await presentationService.getPresentationSchedule(projectId);
-      console.log('✅ Plannings récupérés:', data.length);
+      console.log('Plannings récupérés:', data.length);
       setSchedules(data);
     } catch (err: any) {
-      console.log('ℹ️ Aucun planning trouvé ou erreur:', err.message);
+      console.log('ℹAucun planning trouvé ou erreur:', err.message);
       if (err.message && !err.message.includes('No presentation schedule found')) {
         setError(err.message || 'Erreur lors du chargement des soutenances');
       }
@@ -174,11 +164,10 @@ export const useStudentPresentations = (projectId: string) => {
 
   useEffect(() => {
     if (projectId) {
-      console.log('🚀 Initialisation pour le projet:', projectId);
+      console.log('Initialisation pour le projet:', projectId);
       
-      // Essayer d'abord l'endpoint direct, sinon utiliser l'alternative
       fetchUserGroup().catch(() => {
-        console.log('🔄 Tentative avec méthode alternative');
+        console.log('Tentative avec méthode alternative');
         fetchUserGroupAlternative();
       });
       

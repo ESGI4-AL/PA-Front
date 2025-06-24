@@ -132,7 +132,7 @@ const StudentProjectPresentationsTab: React.FC = () => {
         </Alert>
       )}
 
-      {/* Carte du créneau de l'utilisateur */}
+      {}
       {userSchedule && userGroup && (
         <Card className="border-orange-200 bg-orange-50">
           <CardHeader>
@@ -189,7 +189,7 @@ const StudentProjectPresentationsTab: React.FC = () => {
         </Card>
       )}
 
-      {/* Planning complet */}
+      {}
       {schedules.length > 0 && (
         <Card>
           <CardHeader>
