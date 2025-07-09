@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { 
   Package, 
@@ -20,7 +20,10 @@ import {
   FileText,
   AlertCircle,
   Target,
-  Timer
+  Timer,
+  Star,
+  Save,
+  Send
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
@@ -33,6 +36,7 @@ import { Textarea } from '@/shared/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import { useDeliverables } from '../../hooks/useDeliverables';
+import { useEvaluations } from '../../hooks/useEvaluations';
 import { toast } from 'sonner';
 
 const Switch = ({ checked, onCheckedChange, ...props }: any) => (
@@ -54,7 +58,6 @@ const Progress = ({ value = 0, className = "", ...props }: any) => (
   </div>
 );
 
-// Interface pour les règles de validation
 interface ValidationRule {
   id?: string;
   type: 'file_size' | 'file_presence' | 'folder_structure' | 'file_content';
@@ -72,6 +75,12 @@ interface DeliverableForm {
   rules: ValidationRule[];
 }
 
+interface GradeInput {
+  score: number;
+  comment?: string;
+  isPublished?: boolean;
+}
+
 const TeacherProjectDeliverablesTab: React.FC = () => {
   const { id: projectId } = useParams<{ id: string }>();
   
@@ -86,14 +95,27 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
     analyzeSimilarity,
     getDeliverableSummary
   } = useDeliverables(projectId || '');
+
+  const {
+    criteria,
+    grades,
+    loading: evaluationLoading,
+    gradeGroup,
+    gradeStudent,
+    createEvaluationCriteria
+  } = useEvaluations(projectId || '');
   
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isSummaryDialogOpen, setIsSummaryDialogOpen] = useState(false);
+  const [isGradingDialogOpen, setIsGradingDialogOpen] = useState(false);
+  const [isCreateCriteriaDialogOpen, setIsCreateCriteriaDialogOpen] = useState(false);
+  
   const [deliverableToEdit, setDeliverableToEdit] = useState<any>(null);
   const [deliverableToDelete, setDeliverableToDelete] = useState<string | null>(null);
   const [selectedDeliverableSummary, setSelectedDeliverableSummary] = useState<any>(null);
+  const [selectedDeliverableForGrading, setSelectedDeliverableForGrading] = useState<any>(null);
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
 
   const [deliverableForm, setDeliverableForm] = useState<DeliverableForm>({
@@ -111,6 +133,18 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
     rule: {},
     description: ''
   });
+
+  // État pour la création de critères
+  const [newCriteria, setNewCriteria] = useState({
+    name: '',
+    description: '',
+    weight: 1,
+    type: 'group' as 'group' | 'individual',
+    evaluationType: 'deliverable' as 'deliverable' | 'report' | 'presentation'
+  });
+
+  // État pour la notation
+  const [gradeInputs, setGradeInputs] = useState<{[key: string]: GradeInput}>({});
 
   if (!projectId || projectId === 'undefined') {
     return (
@@ -189,6 +223,66 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
     } catch (error) {
       console.error('Erreur récupération résumé:', error);
       toast.error('Erreur lors de la récupération du résumé');
+    }
+  };
+
+  const handleOpenGrading = async (deliverable: any) => {
+    try {
+      const summary = await getDeliverableSummary(deliverable.id);
+      setSelectedDeliverableForGrading(summary);
+      setIsGradingDialogOpen(true);
+    } catch (error) {
+      console.error('Erreur récupération données notation:', error);
+      toast.error('Erreur lors de la récupération des données');
+    }
+  };
+
+  const handleCreateCriteria = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await createEvaluationCriteria(newCriteria);
+      setIsCreateCriteriaDialogOpen(false);
+      setNewCriteria({
+        name: '',
+        description: '',
+        weight: 1,
+        type: 'group',
+        evaluationType: 'deliverable'
+      });
+      toast.success('Critère créé avec succès');
+    } catch (error) {
+      console.error('Erreur création critère:', error);
+      toast.error('Erreur lors de la création du critère');
+    }
+  };
+
+  const handleGradeSubmit = async (criteriaId: string, groupId: string, studentId?: string) => {
+    const gradeKey = `${criteriaId}-${groupId}${studentId ? `-${studentId}` : ''}`;
+    const gradeData = gradeInputs[gradeKey];
+    
+    if (!gradeData || gradeData.score < 0 || gradeData.score > 20) {
+      toast.error('Veuillez saisir une note valide (0-20)');
+      return;
+    }
+
+    try {
+      if (studentId) {
+        await gradeStudent(criteriaId, studentId, gradeData);
+      } else {
+        await gradeGroup(criteriaId, groupId, gradeData);
+      }
+      
+      // Réinitialiser le champ de saisie
+      setGradeInputs(prev => {
+        const newInputs = { ...prev };
+        delete newInputs[gradeKey];
+        return newInputs;
+      });
+      
+      toast.success('Note enregistrée avec succès');
+    } catch (error) {
+      console.error('Erreur attribution note:', error);
+      toast.error('Erreur lors de l\'attribution de la note');
     }
   };
 
@@ -346,6 +440,22 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
     }
   };
 
+  const getDeliverableCriteria = () => {
+    return criteria.filter(c => c.evaluationType === 'deliverable');
+  };
+
+  const getExistingGrade = (criteriaId: string, groupId: string, studentId?: string) => {
+    const evaluationType = 'deliverable';
+    const type = studentId ? 'individual' : 'group';
+    const targetId = studentId || groupId;
+    
+    if (grades[evaluationType] && grades[evaluationType][type] && grades[evaluationType][type][targetId]) {
+      const gradesForTarget = grades[evaluationType][type][targetId].grades;
+      return gradesForTarget.find(g => g.criteriaId === criteriaId);
+    }
+    return null;
+  };
+
   const safeDeliverables = Array.isArray(deliverables) ? deliverables : [];
   const safeStats = stats || { 
     totalDeliverables: 0, 
@@ -372,218 +482,302 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
             Gérez les livrables et leurs règles de validation pour ce projet
           </p>
         </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              Créer un livrable
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Créer un nouveau livrable</DialogTitle>
-              <DialogDescription>
-                Définissez les paramètres et règles de validation pour ce livrable.
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleCreateDeliverable} className="space-y-6">
-              {/* Informations de base */}
-              <div className="grid grid-cols-2 gap-4">
+        <div className="flex gap-2">
+          <Dialog open={isCreateCriteriaDialogOpen} onOpenChange={setIsCreateCriteriaDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Star className="h-4 w-4" />
+                Créer critère
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Créer un critère de notation</DialogTitle>
+                <DialogDescription>
+                  Définissez un nouveau critère pour évaluer les livrables.
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleCreateCriteria} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nom du livrable</Label>
+                  <Label htmlFor="criteriaName">Nom du critère</Label>
                   <Input
-                    id="name"
-                    placeholder="TP1 - Application React"
-                    value={deliverableForm.name}
-                    onChange={(e) => setDeliverableForm(prev => ({ ...prev, name: e.target.value }))}
+                    id="criteriaName"
+                    placeholder="Qualité du code"
+                    value={newCriteria.name}
+                    onChange={(e) => setNewCriteria(prev => ({ ...prev, name: e.target.value }))}
                     required
                   />
                 </div>
+                
                 <div className="space-y-2">
-                  <Label htmlFor="type">Type</Label>
-                  <Select 
-                    value={deliverableForm.type} 
-                    onValueChange={(value: 'archive' | 'git') => 
-                      setDeliverableForm(prev => ({ ...prev, type: value }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="archive">
-                        <div className="flex items-center gap-2">
-                          <Archive className="h-4 w-4" />
-                          Archive (.zip, .tar.gz)
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="git">
-                        <div className="flex items-center gap-2">
-                          <GitBranch className="h-4 w-4" />
-                          Dépôt Git
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Description détaillée du livrable..."
-                  value={deliverableForm.description}
-                  onChange={(e) => setDeliverableForm(prev => ({ ...prev, description: e.target.value }))}
-                  rows={3}
-                />
-              </div>
-
-              {}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="deadline">Date limite</Label>
-                  <Input
-                    id="deadline"
-                    type="datetime-local"
-                    value={deliverableForm.deadline}
-                    onChange={(e) => setDeliverableForm(prev => ({ ...prev, deadline: e.target.value }))}
-                    required
+                  <Label htmlFor="criteriaDescription">Description</Label>
+                  <Textarea
+                    id="criteriaDescription"
+                    placeholder="Description détaillée du critère..."
+                    value={newCriteria.description}
+                    onChange={(e) => setNewCriteria(prev => ({ ...prev, description: e.target.value }))}
+                    rows={3}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="penalty">Malus par heure de retard</Label>
-                  <Input
-                    id="penalty"
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    placeholder="0.5"
-                    value={deliverableForm.latePenaltyPerHour}
-                    onChange={(e) => setDeliverableForm(prev => ({ 
-                      ...prev, 
-                      latePenaltyPerHour: parseFloat(e.target.value) || 0 
-                    }))}
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="allowLate"
-                  checked={deliverableForm.allowLateSubmission}
-                  onCheckedChange={(checked) => 
-                    setDeliverableForm(prev => ({ ...prev, allowLateSubmission: checked }))
-                  }
-                />
-                <Label htmlFor="allowLate">Autoriser les soumissions en retard</Label>
-              </div>
-
-              {}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label className="text-base font-medium">Règles de validation</Label>
-                  <Badge variant="secondary">
-                    {deliverableForm.rules.length} règle{deliverableForm.rules.length !== 1 ? 's' : ''}
-                  </Badge>
-                </div>
-
-                {}
-                {deliverableForm.rules.length > 0 && (
+                
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    {deliverableForm.rules.map((rule, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div>
-                          <Badge variant="outline" className="mb-1">
-                            {rule.type.replace('_', ' ')}
-                          </Badge>
-                          <p className="text-sm">{rule.description}</p>
-                        </div>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => removeRule(index)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
+                    <Label htmlFor="criteriaWeight">Poids</Label>
+                    <Input
+                      id="criteriaWeight"
+                      type="number"
+                      min="0.1"
+                      step="0.1"
+                      value={newCriteria.weight}
+                      onChange={(e) => setNewCriteria(prev => ({ ...prev, weight: parseFloat(e.target.value) || 1 }))}
+                      required
+                    />
                   </div>
-                )}
-
-                {}
-                <Card className="p-4">
-                  <div className="space-y-4">
-                    <h4 className="font-medium">Ajouter une règle</h4>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Type de règle</Label>
-                        <Select 
-                          value={newRule.type} 
-                          onValueChange={(value: any) => 
-                            setNewRule(prev => ({ ...prev, type: value, rule: {} }))
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="file_size">Taille de fichier</SelectItem>
-                            <SelectItem value="file_presence">Présence de fichiers</SelectItem>
-                            <SelectItem value="folder_structure">Structure de dossiers</SelectItem>
-                            <SelectItem value="file_content">Contenu de fichier</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Description</Label>
-                        <Input
-                          placeholder="Description de la règle"
-                          value={newRule.description}
-                          onChange={(e) => setNewRule(prev => ({ ...prev, description: e.target.value }))}
-                        />
-                      </div>
-                    </div>
-
-                    {getRuleSpecificFields()}
-
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={addRule}
-                      disabled={!newRule.description}
-                      className="w-full"
+                  <div className="space-y-2">
+                    <Label htmlFor="criteriaType">Type</Label>
+                    <Select 
+                      value={newCriteria.type} 
+                      onValueChange={(value: 'group' | 'individual') => 
+                        setNewCriteria(prev => ({ ...prev, type: value }))
+                      }
                     >
-                      Ajouter la règle
-                    </Button>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="group">Groupe</SelectItem>
+                        <SelectItem value="individual">Individuel</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                </Card>
-              </div>
+                </div>
+                
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setIsCreateCriteriaDialogOpen(false)}
+                  >
+                    Annuler
+                  </Button>
+                  <Button type="submit" disabled={evaluationLoading}>
+                    Créer le critère
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+          
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" />
+                Créer un livrable
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Créer un nouveau livrable</DialogTitle>
+                <DialogDescription>
+                  Définissez les paramètres et règles de validation pour ce livrable.
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleCreateDeliverable} className="space-y-6">
+                {/* Informations de base */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Nom du livrable</Label>
+                    <Input
+                      id="name"
+                      placeholder="TP1 - Application React"
+                      value={deliverableForm.name}
+                      onChange={(e) => setDeliverableForm(prev => ({ ...prev, name: e.target.value }))}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="type">Type</Label>
+                    <Select 
+                      value={deliverableForm.type} 
+                      onValueChange={(value: 'archive' | 'git') => 
+                        setDeliverableForm(prev => ({ ...prev, type: value }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="archive">
+                          <div className="flex items-center gap-2">
+                            <Archive className="h-4 w-4" />
+                            Archive (.zip, .tar.gz)
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="git">
+                          <div className="flex items-center gap-2">
+                            <GitBranch className="h-4 w-4" />
+                            Dépôt Git
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
 
-              <div className="flex justify-end gap-2 pt-4 border-t">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => {
-                    setIsCreateDialogOpen(false);
-                    resetForm();
-                  }}
-                >
-                  Annuler
-                </Button>
-                <Button type="submit" disabled={loading}>
-                  Créer le livrable
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="Description détaillée du livrable..."
+                    value={deliverableForm.description}
+                    onChange={(e) => setDeliverableForm(prev => ({ ...prev, description: e.target.value }))}
+                    rows={3}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="deadline">Date limite</Label>
+                    <Input
+                      id="deadline"
+                      type="datetime-local"
+                      value={deliverableForm.deadline}
+                      onChange={(e) => setDeliverableForm(prev => ({ ...prev, deadline: e.target.value }))}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="penalty">Malus par heure de retard</Label>
+                    <Input
+                      id="penalty"
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      placeholder="0.5"
+                      value={deliverableForm.latePenaltyPerHour}
+                      onChange={(e) => setDeliverableForm(prev => ({ 
+                        ...prev, 
+                        latePenaltyPerHour: parseFloat(e.target.value) || 0 
+                      }))}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="allowLate"
+                    checked={deliverableForm.allowLateSubmission}
+                    onCheckedChange={(checked) => 
+                      setDeliverableForm(prev => ({ ...prev, allowLateSubmission: checked }))
+                    }
+                  />
+                  <Label htmlFor="allowLate">Autoriser les soumissions en retard</Label>
+                </div>
+
+                {/* Règles de validation */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-base font-medium">Règles de validation</Label>
+                    <Badge variant="secondary">
+                      {deliverableForm.rules.length} règle{deliverableForm.rules.length !== 1 ? 's' : ''}
+                    </Badge>
+                  </div>
+
+                  {deliverableForm.rules.length > 0 && (
+                    <div className="space-y-2">
+                      {deliverableForm.rules.map((rule, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div>
+                            <Badge variant="outline" className="mb-1">
+                              {rule.type.replace('_', ' ')}
+                            </Badge>
+                            <p className="text-sm">{rule.description}</p>
+                          </div>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => removeRule(index)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <Card className="p-4">
+                    <div className="space-y-4">
+                      <h4 className="font-medium">Ajouter une règle</h4>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Type de règle</Label>
+                          <Select 
+                            value={newRule.type} 
+                            onValueChange={(value: any) => 
+                              setNewRule(prev => ({ ...prev, type: value, rule: {} }))
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="file_size">Taille de fichier</SelectItem>
+                              <SelectItem value="file_presence">Présence de fichiers</SelectItem>
+                              <SelectItem value="folder_structure">Structure de dossiers</SelectItem>
+                              <SelectItem value="file_content">Contenu de fichier</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Description</Label>
+                          <Input
+                            placeholder="Description de la règle"
+                            value={newRule.description}
+                            onChange={(e) => setNewRule(prev => ({ ...prev, description: e.target.value }))}
+                          />
+                        </div>
+                      </div>
+
+                      {getRuleSpecificFields()}
+
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={addRule}
+                        disabled={!newRule.description}
+                        className="w-full"
+                      >
+                        Ajouter la règle
+                      </Button>
+                    </div>
+                  </Card>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-4 border-t">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => {
+                      setIsCreateDialogOpen(false);
+                      resetForm();
+                    }}
+                  >
+                    Annuler
+                  </Button>
+                  <Button type="submit" disabled={loading}>
+                    Créer le livrable
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
-      {}
+      {/* Statistiques */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -626,7 +820,7 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
         </Card>
       </div>
 
-      {}
+      {/* Erreurs */}
       {error && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
@@ -634,7 +828,7 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
         </Alert>
       )}
 
-      {}
+      {/* Liste des livrables */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -719,6 +913,15 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
                           <Button
                             size="sm"
                             variant="outline"
+                            onClick={() => handleOpenGrading(deliverable)}
+                            className="gap-1"
+                          >
+                            <Star className="h-4 w-4" />
+                            Noter
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
                             onClick={() => handleAnalyzeSimilarity(deliverable.id)}
                             disabled={analyzingId === deliverable.id}
                             className="gap-1"
@@ -764,7 +967,7 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
         </CardContent>
       </Card>
 
-      {}
+      {/* Dialog de suppression */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -794,7 +997,7 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {}
+      {/* Dialog d'édition */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -911,7 +1114,7 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {}
+      {/* Dialog de résumé */}
       <Dialog open={isSummaryDialogOpen} onOpenChange={setIsSummaryDialogOpen}>
         <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -922,7 +1125,7 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
           </DialogHeader>
           {selectedDeliverableSummary && (
             <div className="space-y-6">
-              {}
+              {/* Informations du livrable */}
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">{selectedDeliverableSummary.deliverable.name}</CardTitle>
@@ -945,7 +1148,7 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
                 </CardContent>
               </Card>
 
-              {}
+              {/* Règles de validation */}
               {selectedDeliverableSummary.rules && selectedDeliverableSummary.rules.length > 0 && (
                 <Card>
                   <CardHeader>
@@ -1048,6 +1251,260 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
           )}
           <div className="flex justify-end pt-4">
             <Button onClick={() => setIsSummaryDialogOpen(false)}>
+              Fermer
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de notation */}
+      <Dialog open={isGradingDialogOpen} onOpenChange={setIsGradingDialogOpen}>
+        <DialogContent className="sm:max-w-[1000px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Notation du livrable</DialogTitle>
+            <DialogDescription>
+              Attribuez les notes selon les critères définis pour ce livrable.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedDeliverableForGrading && (
+            <div className="space-y-6">
+              {/* Informations du livrable */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Star className="h-5 w-5" />
+                    {selectedDeliverableForGrading.deliverable.name}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium">Type:</span> {selectedDeliverableForGrading.deliverable.type}
+                    </div>
+                    <div>
+                      <span className="font-medium">Date limite:</span> {new Date(selectedDeliverableForGrading.deliverable.deadline).toLocaleString('fr-FR')}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Critères de notation disponibles */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Critères de notation</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {getDeliverableCriteria().length === 0 ? (
+                    <div className="text-center py-8">
+                      <Star className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">Aucun critère de notation défini pour les livrables.</p>
+                      <Button 
+                        onClick={() => setIsCreateCriteriaDialogOpen(true)}
+                        className="mt-4"
+                      >
+                        Créer un critère
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {getDeliverableCriteria().map((criterion) => (
+                        <div key={criterion.id} className="p-4 border rounded-lg">
+                          <div className="flex items-center justify-between mb-4">
+                            <div>
+                              <h4 className="font-medium">{criterion.name}</h4>
+                              <p className="text-sm text-muted-foreground">{criterion.description}</p>
+                              <div className="flex items-center gap-2 mt-2">
+                                <Badge variant="outline">
+                                  {criterion.type === 'group' ? 'Groupe' : 'Individuel'}
+                                </Badge>
+                                <Badge variant="secondary">
+                                  Poids: {criterion.weight}
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Notation par groupe */}
+                          <div className="space-y-3">
+                            {selectedDeliverableForGrading.groupSummaries?.map((groupSummary: any) => (
+                              <div key={groupSummary.group.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <div className="flex items-center gap-3">
+                                  <div>
+                                    <p className="font-medium">{groupSummary.group.name}</p>
+                                    {groupSummary.submission ? (
+                                      <div className="flex items-center gap-2 mt-1">
+                                        {groupSummary.submission.isLate ? (
+                                          <Badge variant="destructive" className="text-xs">En retard</Badge>
+                                        ) : (
+                                          <Badge variant="default" className="text-xs">À temps</Badge>
+                                        )}
+                                        {groupSummary.submission.validationStatus === 'valid' ? (
+                                          <Badge variant="default" className="text-xs bg-green-100 text-green-800">Valide</Badge>
+                                        ) : groupSummary.submission.validationStatus === 'invalid' ? (
+                                          <Badge variant="destructive" className="text-xs">Invalide</Badge>
+                                        ) : (
+                                          <Badge variant="secondary" className="text-xs">En attente</Badge>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <Badge variant="outline" className="text-xs">Non soumis</Badge>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                  {criterion.type === 'group' ? (
+                                    <div className="flex items-center gap-2">
+                                      {(() => {
+                                        const existingGrade = getExistingGrade(criterion.id, groupSummary.group.id);
+                                        const gradeKey = `${criterion.id}-${groupSummary.group.id}`;
+                                        
+                                        if (existingGrade) {
+                                          return (
+                                            <div className="flex items-center gap-2">
+                                              <Badge variant="default" className="bg-green-100 text-green-800">
+                                                {existingGrade.score}/20
+                                              </Badge>
+                                              {existingGrade.comment && (
+                                                <span className="text-xs text-muted-foreground">
+                                                  {existingGrade.comment}
+                                                </span>
+                                              )}
+                                            </div>
+                                          );
+                                        }
+                                        
+                                        return (
+                                          <div className="flex items-center gap-2">
+                                            <Input
+                                              type="number"
+                                              placeholder="Note"
+                                              min="0"
+                                              max="20"
+                                              step="0.5"
+                                              className="w-20"
+                                              value={gradeInputs[gradeKey]?.score || ''}
+                                              onChange={(e) => setGradeInputs(prev => ({
+                                                ...prev,
+                                                [gradeKey]: {
+                                                  ...prev[gradeKey],
+                                                  score: parseFloat(e.target.value) || 0
+                                                }
+                                              }))}
+                                            />
+                                            <Input
+                                              placeholder="Commentaire"
+                                              className="w-40"
+                                              value={gradeInputs[gradeKey]?.comment || ''}
+                                              onChange={(e) => setGradeInputs(prev => ({
+                                                ...prev,
+                                                [gradeKey]: {
+                                                  ...prev[gradeKey],
+                                                  comment: e.target.value
+                                                }
+                                              }))}
+                                            />
+                                            <Button
+                                              size="sm"
+                                              onClick={() => handleGradeSubmit(criterion.id, groupSummary.group.id)}
+                                              disabled={evaluationLoading || !gradeInputs[gradeKey]?.score}
+                                            >
+                                              <Save className="h-4 w-4" />
+                                            </Button>
+                                          </div>
+                                        );
+                                      })()}
+                                    </div>
+                                  ) : (
+                                    <div className="space-y-2">
+                                      {groupSummary.group.students?.map((student: any) => {
+                                        const existingGrade = getExistingGrade(criterion.id, groupSummary.group.id, student.id);
+                                        const gradeKey = `${criterion.id}-${groupSummary.group.id}-${student.id}`;
+                                        
+                                        if (existingGrade) {
+                                          return (
+                                            <div key={student.id} className="flex items-center gap-2">
+                                              <span className="text-sm w-24">{student.name}</span>
+                                              <Badge variant="default" className="bg-green-100 text-green-800">
+                                                {existingGrade.score}/20
+                                              </Badge>
+                                              {existingGrade.comment && (
+                                                <span className="text-xs text-muted-foreground">
+                                                  {existingGrade.comment}
+                                                </span>
+                                              )}
+                                            </div>
+                                          );
+                                        }
+                                        
+                                        return (
+                                          <div key={student.id} className="flex items-center gap-2">
+                                            <span className="text-sm w-24">{student.name}</span>
+                                            <Input
+                                              type="number"
+                                              placeholder="Note"
+                                              min="0"
+                                              max="20"
+                                              step="0.5"
+                                              className="w-20"
+                                              value={gradeInputs[gradeKey]?.score || ''}
+                                              onChange={(e) => setGradeInputs(prev => ({
+                                                ...prev,
+                                                [gradeKey]: {
+                                                  ...prev[gradeKey],
+                                                  score: parseFloat(e.target.value) || 0
+                                                }
+                                              }))}
+                                            />
+                                            <Input
+                                              placeholder="Commentaire"
+                                              className="w-32"
+                                              value={gradeInputs[gradeKey]?.comment || ''}
+                                              onChange={(e) => setGradeInputs(prev => ({
+                                                ...prev,
+                                                [gradeKey]: {
+                                                  ...prev[gradeKey],
+                                                  comment: e.target.value
+                                                }
+                                              }))}
+                                            />
+                                            <Button
+                                              size="sm"
+                                              onClick={() => handleGradeSubmit(criterion.id, groupSummary.group.id, student.id)}
+                                              disabled={evaluationLoading || !gradeInputs[gradeKey]?.score}
+                                            >
+                                              <Save className="h-4 w-4" />
+                                            </Button>
+                                          </div>
+                                        );
+                                      }) || (
+                                        <p className="text-xs text-muted-foreground">Aucun étudiant dans ce groupe</p>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )) || (
+                              <p className="text-center text-muted-foreground py-4">
+                                Aucun groupe trouvé
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+          
+          <div className="flex justify-end gap-2 pt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsGradingDialogOpen(false)}
+            >
               Fermer
             </Button>
           </div>
