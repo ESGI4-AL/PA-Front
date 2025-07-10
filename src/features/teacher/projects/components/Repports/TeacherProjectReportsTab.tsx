@@ -161,7 +161,6 @@ const TeacherProjectReportsTab = () => {
         await gradeGroup(criteriaId, groupId, gradeData);
       }
       
-      // Réinitialiser le champ de saisie
       setGradeInputs(prev => {
         const newInputs = { ...prev };
         delete newInputs[gradeKey];
@@ -279,7 +278,7 @@ const TeacherProjectReportsTab = () => {
           </div>
         </div>
 
-        {/* Informations du rapport */}
+        {}
         <Card>
           <CardHeader>
             <div className="flex items-start justify-between">
