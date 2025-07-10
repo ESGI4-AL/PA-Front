@@ -390,17 +390,132 @@ const TeacherProjectReportsTab = () => {
                 </div>
                 
                 {}
-                <div className="prose max-w-none p-4 bg-gray-50 rounded-lg">
-                {currentSection.contentType === 'html' ? (
-  <div dangerouslySetInnerHTML={{ __html: currentSection.content }} />
-) : currentSection.contentType === 'markdown' ? (
-  <div dangerouslySetInnerHTML={{ __html: marked(currentSection.content) }} />
-) : (
-  <div className="whitespace-pre-wrap">
-    {currentSection.content}
+                <div className="prose max-w-none p-4 bg-gray-50 rounded-lg" style={{
+  // Styles pour les tableaux avec thème corail
+  '--table-header-bg': '#ff6b6b',
+  '--table-header-color': 'white',
+  '--table-border-color': '#ffb3b3',
+  '--content-bg': '#fff5f5',
+  '--content-color': '#2d3748'
+} as React.CSSProperties}>
+  <style jsx>{`
+    .report-content table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 16px 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    
+    .report-content th {
+      background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%) !important;
+      color: white !important;
+      border: 1px solid #ff8a80 !important;
+      padding: 12px 16px !important;
+      font-weight: 600 !important;
+      text-align: left !important;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    
+    .report-content td {
+      background-color: white !important;
+      color: #2d3748 !important;
+      border: 1px solid #ffcccc !important;
+      padding: 10px 16px !important;
+    }
+    
+    .report-content tr:nth-child(even) td {
+      background-color: #fff5f5 !important;
+    }
+    
+    .report-content tr:hover td {
+      background-color: #ffebee !important;
+    }
+    
+    .report-content [style*="background-color: #"] {
+      background: linear-gradient(135deg, #ff6b6b 0%, #ff8a80 100%) !important;
+      color: white !important;
+      padding: 12px 16px !important;
+      border-radius: 8px !important;
+    }
+    
+    .report-content [style*="background: #"] {
+      background: linear-gradient(135deg, #ff6b6b 0%, #ff8a80 100%) !important;
+      color: white !important;
+      padding: 12px 16px !important;
+      border-radius: 8px !important;
+    }
+    
+    .report-content [style*="color: #"] {
+      color: #2d3748 !important;
+    }
+    
+    .report-content .blue-section,
+    .report-content [class*="blue"],
+    .report-content [class*="primary"] {
+      background: linear-gradient(135deg, #ff6b6b 0%, #ff8a80 100%) !important;
+      color: white !important;
+      padding: 16px !important;
+      border-radius: 8px !important;
+      border: none !important;
+    }
+    
+    .report-content blockquote {
+      background: linear-gradient(135deg, #fff5f5 0%, #ffebee 100%) !important;
+      border-left: 4px solid #ff6b6b !important;
+      color: #2d3748 !important;
+      padding: 16px 20px !important;
+      margin: 16px 0 !important;
+      border-radius: 0 8px 8px 0 !important;
+      font-style: italic;
+    }
+    
+    .report-content .highlight,
+    .report-content [style*="background-color: blue"],
+    .report-content [style*="background-color: #4"],
+    .report-content [style*="background-color: #5"],
+    .report-content [style*="background-color: #6"] {
+      background: linear-gradient(135deg, #ff6b6b 0%, #ff8a80 100%) !important;
+      color: white !important;
+      padding: 8px 12px !important;
+      border-radius: 6px !important;
+      font-weight: 500 !important;
+    }
+    
+    .report-content h1, .report-content h2, .report-content h3 {
+      color: #ff6b6b !important;
+      border-bottom: 2px solid #ffcccc !important;
+      padding-bottom: 8px !important;
+    }
+    
+    .report-content .status-badge {
+      background: #4ade80 !important;
+      color: white !important;
+      padding: 4px 8px !important;
+      border-radius: 4px !important;
+      font-size: 12px !important;
+      font-weight: 600 !important;
+    }
+    
+    .report-content .checkmark {
+      color: #4ade80 !important;
+      font-weight: bold !important;
+    }
+  `}</style>
+  
+  <div className="report-content">
+    {currentSection.contentType === 'html' ? (
+      <div dangerouslySetInnerHTML={{ __html: currentSection.content }} />
+    ) : currentSection.contentType === 'markdown' ? (
+      <div dangerouslySetInnerHTML={{ __html: marked(currentSection.content) }} />
+    ) : (
+      <div className="whitespace-pre-wrap">
+        {currentSection.content}
+      </div>
+    )}
   </div>
-)}
-                </div>
+</div>
                 
                 {}
                 <div className="mt-8 pt-4 border-t">
