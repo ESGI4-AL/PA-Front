@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
 import { Textarea } from '@/shared/components/ui/textarea';
+import { marked } from 'marked';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select';
 import { 
   FileText,
@@ -29,7 +30,6 @@ import { useReports } from '../../hooks/useReports';
 import { useEvaluations } from '../../hooks/useEvaluations';
 import { toast } from 'sonner';
 
-// Interface pour la notation
 interface GradeInput {
   score: number;
   comment?: string;
@@ -68,7 +68,6 @@ const TeacherProjectReportsTab = () => {
   const [isGradingDialogOpen, setIsGradingDialogOpen] = useState(false);
   const [isCreateCriteriaDialogOpen, setIsCreateCriteriaDialogOpen] = useState(false);
 
-  // État pour la création de critères
   const [newCriteria, setNewCriteria] = useState({
     name: '',
     description: '',
@@ -77,7 +76,6 @@ const TeacherProjectReportsTab = () => {
     evaluationType: 'report' as 'deliverable' | 'report' | 'presentation'
   });
 
-  // État pour la notation
   const [gradeInputs, setGradeInputs] = useState<{[key: string]: GradeInput}>({});
 
   const handleReportSelect = async (reportId: string) => {
@@ -394,13 +392,15 @@ const TeacherProjectReportsTab = () => {
                 
                 {}
                 <div className="prose max-w-none p-4 bg-gray-50 rounded-lg">
-                  {currentSection.contentType === 'html' ? (
-                    <div dangerouslySetInnerHTML={{ __html: currentSection.content }} />
-                  ) : (
-                    <div className="whitespace-pre-wrap">
-                      {currentSection.content || <span className="text-muted-foreground italic">Aucun contenu</span>}
-                    </div>
-                  )}
+                {currentSection.contentType === 'html' ? (
+  <div dangerouslySetInnerHTML={{ __html: currentSection.content }} />
+) : currentSection.contentType === 'markdown' ? (
+  <div dangerouslySetInnerHTML={{ __html: marked(currentSection.content) }} />
+) : (
+  <div className="whitespace-pre-wrap">
+    {currentSection.content}
+  </div>
+)}
                 </div>
                 
                 {}
