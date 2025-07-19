@@ -288,7 +288,6 @@ const StudentProjectDeliverablesTab: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* En-tête */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Mes livrables</h2>

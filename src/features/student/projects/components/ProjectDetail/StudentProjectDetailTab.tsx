@@ -100,7 +100,6 @@ const StudentProjectDetailTab: React.FC<StudentProjectDetailTabProps> = ({ proje
     const isExpired = now > deadline;
     const badges = [];
 
-    // Badge de soumission - toujours affiché
     if (deliverable.submission) {
       if (deliverable.submission.validationStatus === 'valid') {
         badges.push(
