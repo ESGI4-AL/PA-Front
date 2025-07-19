@@ -480,11 +480,6 @@ const StudentSubmissionDialog: React.FC<StudentSubmissionDialogProps> = ({
                   <p className="text-xs text-gray-600">
                     <span className="text-red-500">*</span> Donnez un nom descriptif à votre projet pour faciliter l'identification.
                   </p>
-                  {!customFileName.trim() && (
-                    <p className="text-xs text-red-500">
-                      ⚠️ Le nom du projet est obligatoire
-                    </p>
-                  )}
                 </div>
               </div>
             )}
