@@ -552,18 +552,13 @@ const StudentProjectDeliverablesTab: React.FC = () => {
                               )}
                             </div>
 
-                            {/* Bouton de suppression - Désactivé si expiré ET retards non autorisés */}
+                            {/* Bouton de suppression - Toujours activé si le livrable est modifiable */}
                             <Button
                               size="sm"
                               variant="outline"
-                              className="gap-1 text-red-600 border-red-300 hover:bg-red-50 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="gap-1 text-red-600 border-red-300 hover:bg-red-50 flex-shrink-0"
                               onClick={() => handleDeleteSubmission(deliverable.submission!.id!, deliverable.name)}
-                              disabled={isExpired && !deliverable.allowLateSubmission}
-                              title={
-                                isExpired && !deliverable.allowLateSubmission
-                                  ? "Impossible de supprimer : livrable expiré et retards non autorisés"
-                                  : "Supprimer cette soumission"
-                              }
+                              title="Supprimer cette soumission"
                             >
                               <Trash2 className="h-3 w-3" />
                               Supprimer
@@ -653,16 +648,14 @@ const StudentProjectDeliverablesTab: React.FC = () => {
             <AlertDialogTitle className="flex items-center gap-2">
               Confirmer la suppression
             </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-4 pt-4">
-              <div>
-                Êtes-vous sûr de vouloir supprimer votre soumission pour{' '}
-                <span className="font-semibold">"{submissionToDelete?.deliverableName}"</span> ?
-              </div>
-              <div className="flex items-center gap-2 text-red-600 font-medium bg-red-50 p-3 rounded-lg border border-red-200">
-                <AlertTriangle className="h-4 w-4 flex-shrink-0" />
-                <span>Cette action est irréversible et supprimera définitivement votre fichier.</span>
-              </div>
+            <AlertDialogDescription className="pt-4">
+              Êtes-vous sûr de vouloir supprimer votre soumission pour{' '}
+              <span className="font-semibold">"{submissionToDelete?.deliverableName}"</span> ?
             </AlertDialogDescription>
+            <div className="flex items-center gap-2 text-red-600 font-medium bg-red-50 p-3 rounded-lg border border-red-200 mt-4">
+              <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+              <span>Cette action est irréversible et supprimera définitivement votre fichier.</span>
+            </div>
           </AlertDialogHeader>
           <AlertDialogFooter className="pt-6">
             <AlertDialogCancel>Annuler</AlertDialogCancel>
