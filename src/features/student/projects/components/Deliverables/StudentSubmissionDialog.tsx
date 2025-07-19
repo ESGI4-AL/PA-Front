@@ -8,7 +8,8 @@ import {
   AlertCircle,
   Package,
   FileArchive,
-  HardDrive
+  HardDrive,
+  Info
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/shared/components/ui/dialog';
 import { Button } from '@/shared/components/ui/button';
@@ -53,13 +54,21 @@ const StudentSubmissionDialog: React.FC<StudentSubmissionDialogProps> = ({
   const [validationResult, setValidationResult] = useState<any>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submissionDetails, setSubmissionDetails] = useState<any>(null);
+  const [fileSizeError, setFileSizeError] = useState<string | null>(null);
 
   const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      const maxSize = 100 * 1024 * 1024; // 100MB
+      if (file.size > maxSize) {
+        setFileSizeError(`Fichier trop volumineux. Taille maximum: 100MB, taille du fichier: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+        return;
+      }
+
       setSelectedFile(file);
       setCustomFileName('');
       setValidationResult(null);
+      setFileSizeError(null);
     }
   }, []);
 
@@ -78,8 +87,14 @@ const StudentSubmissionDialog: React.FC<StudentSubmissionDialogProps> = ({
     setDragActive(false);
     const file = event.dataTransfer.files[0];
     if (file && (file.type.includes('zip') || file.name.endsWith('.zip') || file.name.endsWith('.tar.gz'))) {
+      const maxSize = 100 * 1024 * 1024; // 100MB
+      if (file.size > maxSize) {
+        setFileSizeError(`Fichier trop volumineux. Taille maximum: 100MB, taille du fichier: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+        return;
+      }
       setSelectedFile(file);
       setValidationResult(null);
+      setFileSizeError(null);
     }
   }, []);
 
@@ -125,10 +140,8 @@ const StudentSubmissionDialog: React.FC<StudentSubmissionDialogProps> = ({
           type: submissionType
         });
 
-        // Auto-fermer après 4 secondes en cas de succès
-        setTimeout(() => {
-          handleClose();
-        }, 1000);
+        handleClose();
+
       } else {
         setValidationResult({
           valid: false,
@@ -151,6 +164,7 @@ const StudentSubmissionDialog: React.FC<StudentSubmissionDialogProps> = ({
       setValidationResult(null);
       setSubmitSuccess(false);
       setSubmissionDetails(null);
+      setFileSizeError(null);
       onClose();
     }
   };
@@ -217,7 +231,7 @@ const StudentSubmissionDialog: React.FC<StudentSubmissionDialogProps> = ({
               <CheckCircle className="h-20 w-20 text-green-500 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-green-700 mb-2">🎉 Soumission réussie !</h3>
               <p className="text-sm text-gray-600 mb-4">
-                Votre livrable a été envoyé avec succès sur Firebase Storage.
+                Votre livrable a été envoyé avec succès !
               </p>
             </div>
 
@@ -336,7 +350,8 @@ const StudentSubmissionDialog: React.FC<StudentSubmissionDialogProps> = ({
                   </div>
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground flex items-center gap-1">
+                <Info className="h-4 w-4 pt-0.5" />
                 Le type de soumission est défini par votre enseignant.
               </p>
             </div>
@@ -380,7 +395,8 @@ const StudentSubmissionDialog: React.FC<StudentSubmissionDialogProps> = ({
                       <Upload className="h-12 w-12 text-gray-400 mx-auto" />
                       <div>
                         <p className="text-lg font-medium">Déposez votre archive ici</p>
-                        <p className="text-gray-600">ou cliquez pour sélectionner</p>
+                        <p className="text-gray-600">ou cliquez pour sélectionner</p><br></br>
+                        <p className="text-gray-600">Taille maximale: 100 Mo</p><br></br>
                       </div>
                       <input
                         type="file"
@@ -400,6 +416,16 @@ const StudentSubmissionDialog: React.FC<StudentSubmissionDialogProps> = ({
                   )}
                 </div>
 
+                {/* Alerte d'erreur de taille de fichier */}
+                {fileSizeError && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      {fileSizeError}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
                 {selectedFile && (
                   <div className="space-y-2">
                     <Label htmlFor="customFileName">
@@ -408,7 +434,7 @@ const StudentSubmissionDialog: React.FC<StudentSubmissionDialogProps> = ({
                     <Input
                       id="customFileName"
                       type="text"
-                      placeholder="Ex: MonProjet_Final, TP_React_Groupe1..."
+                      placeholder="Ex: Projet_React_Group1_4AL1..."
                       value={customFileName}
                       onChange={(e) => setCustomFileName(e.target.value)}
                       disabled={isSubmitting}
@@ -418,11 +444,6 @@ const StudentSubmissionDialog: React.FC<StudentSubmissionDialogProps> = ({
                     <p className="text-xs text-gray-600">
                       <span className="text-red-500">*</span> Ce nom sera utilisé pour identifier votre soumission.
                     </p>
-                    {!customFileName.trim() && selectedFile && (
-                      <p className="text-xs text-red-500">
-                        ⚠️ Le nom du fichier est obligatoire
-                      </p>
-                    )}
                   </div>
                 )}
               </div>
@@ -474,7 +495,7 @@ const StudentSubmissionDialog: React.FC<StudentSubmissionDialogProps> = ({
                 <div className="flex items-center justify-between text-sm">
                   <span className="flex items-center gap-2">
                     <HardDrive className="h-4 w-4" />
-                    Envoi vers Firebase Storage...
+                    Envoi de votre livrable...
                   </span>
                   <span className="font-medium">{Math.round(uploadProgress)}%</span>
                 </div>
@@ -495,14 +516,14 @@ const StudentSubmissionDialog: React.FC<StudentSubmissionDialogProps> = ({
                 <AlertDescription>
                   <div className="space-y-2">
                     <div className="font-medium">
-                      {validationResult.valid ? 'Validation réussie' : 'Erreurs de validation'}
+                      {validationResult.valid ? 'Validation réussie' : 'Erreur'}
                     </div>
                     {validationResult.details?.map((detail: any, index: number) => (
-                      <div key={index} className="flex items-start gap-2 text-sm">
+                      <div key={index} className="flex items-center gap-2 text-sm">
                         {detail.valid ? (
-                          <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
+                          <CheckCircle className="h-4 w-4 text-green-600" />
                         ) : (
-                          <AlertCircle className="h-4 w-4 text-red-600 mt-0.5" />
+                          <AlertCircle className="h-4 w-4 text-red-600" />
                         )}
                         <span>{detail.message}</span>
                       </div>

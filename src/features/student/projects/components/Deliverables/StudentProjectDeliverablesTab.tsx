@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   Package,
+  LibraryBig,
   Calendar,
   Clock,
   CheckCircle,
@@ -11,20 +12,27 @@ import {
   GitBranch,
   AlertCircle,
   Timer,
-  FileText,
-  HardDrive,
-  FolderOpen,
-  Code,
-  FileArchive,
+  ArrowDownToLine,
   Link,
   Download,
   Trash2,
-  RefreshCw
+  RefreshCw,
+  Dot
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
 import { Alert, AlertDescription } from '@/shared/components/ui/alert';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/shared/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { useStudentDeliverables } from '../../hooks/useStudentDeliverables';
 import { StudentDeliverableView } from '@/domains/project/models/deliverableModels';
@@ -47,6 +55,13 @@ const StudentProjectDeliverablesTab: React.FC = () => {
   // États pour le dialog de soumission
   const [selectedDeliverable, setSelectedDeliverable] = useState<StudentDeliverableView | null>(null);
   const [isSubmissionDialogOpen, setIsSubmissionDialogOpen] = useState(false);
+
+  // États pour le dialog de suppression
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [submissionToDelete, setSubmissionToDelete] = useState<{
+    id: string;
+    deliverableName: string;
+  } | null>(null);
 
   // État pour le suivi des soumissions
   const [submissionCounts, setSubmissionCounts] = useState({
@@ -114,10 +129,21 @@ const StudentProjectDeliverablesTab: React.FC = () => {
   // Mettre à jour les compteurs quand les livrables changent
   useEffect(() => {
     const updateCounts = () => {
+      const now = new Date();
       const total = deliverables.length;
       const submitted = deliverables.filter(d => d.submission).length;
-      const expired = deliverables.filter(d => d.isExpired && !d.submission).length;
-      const pending = deliverables.filter(d => !d.submission && !d.isExpired).length;
+
+      // Calculer les expirés : tous les livrables dont la deadline est passée
+      const expired = deliverables.filter(d => {
+        const deadline = new Date(d.deadline);
+        return now > deadline;
+      }).length;
+
+      // Calculer les en attente : livrables non soumis et non expirés
+      const pending = deliverables.filter(d => {
+        const deadline = new Date(d.deadline);
+        return !d.submission && now <= deadline;
+      }).length;
 
       setSubmissionCounts({ total, submitted, pending, expired });
     };
@@ -149,7 +175,7 @@ const StudentProjectDeliverablesTab: React.FC = () => {
 
       if (result.success) {
         const deliverable = deliverables.find(d => d.id === deliverableId);
-        toast.success(`Soumission réussie ! Le livrable "${deliverable?.name}" a été soumis avec succès sur Firebase Storage.`);
+        toast.success(`Soumission réussie ! Le livrable "${deliverable?.name}" a été soumis avec succès !`);
 
         // Fermer le dialog après un délai pour laisser voir la confirmation
         setTimeout(() => {
@@ -181,14 +207,23 @@ const StudentProjectDeliverablesTab: React.FC = () => {
     }
   };
 
-  // Fonction pour supprimer une soumission
-  const handleDeleteSubmission = async (submissionId: string, deliverableName: string) => {
-    if (window.confirm(`Êtes-vous sûr de vouloir supprimer votre soumission pour "${deliverableName}" ?\n\nCette action est irréversible.`)) {
-      try {
-        await deleteSubmissionById(submissionId);
-      } catch (error) {
-        console.error('Erreur lors de la suppression:', error);
-      }
+  const handleDeleteSubmission = (submissionId: string, deliverableName: string) => {
+    setSubmissionToDelete({ id: submissionId, deliverableName });
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteSubmission = async () => {
+    if (!submissionToDelete) return;
+
+    try {
+      await deleteSubmissionById(submissionToDelete.id);
+      toast.success(`Soumission supprimée avec succès pour "${submissionToDelete.deliverableName}"`);
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      toast.error('Erreur lors de la suppression de la soumission');
+    } finally {
+      setDeleteDialogOpen(false);
+      setSubmissionToDelete(null);
     }
   };
 
@@ -223,9 +258,9 @@ const StudentProjectDeliverablesTab: React.FC = () => {
     }
 
     if (isExpired) {
-      return <Badge variant="destructive">Expiré</Badge>;
+      return <Badge variant="outline">Non soumis</Badge>;
     } else if (deadline.getTime() - now.getTime() < 24 * 60 * 60 * 1000) {
-      return <Badge variant="secondary" className="bg-orange-100 text-orange-800">Urgent</Badge>;
+      return <Badge variant="secondary" className="bg-red-100 text-red-800">Urgent</Badge>;
     } else {
       return <Badge variant="outline">À faire</Badge>;
     }
@@ -233,36 +268,6 @@ const StudentProjectDeliverablesTab: React.FC = () => {
 
   const getDeliverableIcon = (type: string) => {
     return type === 'git' ? <GitBranch className="h-4 w-4" /> : <Package className="h-4 w-4" />;
-  };
-
-  const getRuleTypeIcon = (ruleType: string) => {
-    switch (ruleType) {
-      case 'file_size':
-        return <HardDrive className="h-3 w-3" />;
-      case 'file_presence':
-        return <FileText className="h-3 w-3" />;
-      case 'folder_structure':
-        return <FolderOpen className="h-3 w-3" />;
-      case 'file_content':
-        return <Code className="h-3 w-3" />;
-      default:
-        return <AlertCircle className="h-3 w-3" />;
-    }
-  };
-
-  const getSubmissionTypeIcon = (submission: any) => {
-    if (submission.type === 'git') {
-      return <GitBranch className="h-4 w-4 text-blue-600" />;
-    } else if (submission.fileName?.endsWith('.zip')) {
-      return <FileArchive className="h-4 w-4 text-purple-600" />;
-    } else if (submission.fileName?.endsWith('.tar') || submission.fileName?.endsWith('.tar.gz')) {
-      return <FileArchive className="h-4 w-4 text-orange-600" />;
-    } else if (submission.filePath) {
-      // Fallback pour les fichiers sans nom spécifique
-      return <FileArchive className="h-4 w-4 text-purple-600" />;
-    } else {
-      return <FileText className="h-4 w-4 text-gray-600" />;
-    }
   };
 
   const formatFileSize = (bytes: number) => {
@@ -367,7 +372,7 @@ const StudentProjectDeliverablesTab: React.FC = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
+            <LibraryBig className="h-5 w-5" />
             Livrables du projet
           </CardTitle>
         </CardHeader>
@@ -393,7 +398,7 @@ const StudentProjectDeliverablesTab: React.FC = () => {
                     <CardHeader className="w-full">
                       <div className="flex items-start justify-between w-full">
                         <div className="flex items-start gap-3 flex-1">
-                          <div className="mt-1">
+                          <div className="mt-[7px]">
                             {getDeliverableIcon(deliverable.type)}
                           </div>
                           <div className="flex-1">
@@ -415,148 +420,6 @@ const StudentProjectDeliverablesTab: React.FC = () => {
                                 </div>
                               )}
                             </div>
-
-                            {/* Règles du livrable */}
-                            {deliverable.rules && deliverable.rules.length > 0 && (
-                              <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                                <h4 className="text-sm font-medium text-blue-900 mb-2">Règles :</h4>
-                                <div className="space-y-1 text-xs text-blue-700">
-                                  {deliverable.rules.map((rule, index) => (
-                                    <div key={index} className="flex items-center gap-1">
-                                      {getRuleTypeIcon(rule.type)}
-                                      {rule.description || `Règle ${rule.type.replace('_', ' ')}`}
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Résumé de la soumission */}
-                            {deliverable.submission && (
-                              <div className="mt-3 p-3 bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg">
-                                <div className="flex items-center w-full gap-4">
-                                  <div className="flex items-center gap-2">
-                                    {getSubmissionTypeIcon(deliverable.submission)}
-                                    <span className="text-sm font-semibold text-green-800">Soumis</span>
-                                  </div>
-
-                                  {/* Date et heure */}
-                                  <div className="flex items-center gap-1 text-sm">
-                                    <Calendar className="h-3 w-3 text-gray-500" />
-                                    <span>{new Date(deliverable.submission.submissionDate!).toLocaleDateString('fr-FR')}</span>
-                                    <Clock className="h-3 w-3 text-gray-500 ml-2" />
-                                    <span>{new Date(deliverable.submission.submissionDate!).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
-                                  </div>
-
-                                  {/* Nom du fichier ou URL Git */}
-                                  <div
-                                    className="flex items-center gap-1 text-sm flex-1 min-w-0"
-                                  >
-                                    {deliverable.submission?.gitUrl ? (
-                                      <>
-                                        <Link className="h-3 w-3 text-blue-600 flex-shrink-0" />
-                                        <a
-                                          href={deliverable.submission!.gitUrl!}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="text-purple-600 hover:text-purple-800 underline cursor-pointer font-medium truncate"
-                                          title="Ouvrir le lien GitHub dans une nouvelle fenêtre"
-                                        >
-                                          {deliverable.submission!.gitUrl}
-                                        </a>
-                                      </>
-                                    ) : deliverable.submission?.fileName ? (
-                                      <>
-                                        <FileArchive className="h-3 w-3 text-purple-600 flex-shrink-0" />
-                                        <button
-                                          onClick={() => {
-                                            handleDownloadSubmission(deliverable.submission!.id!, deliverable.submission!.fileName!);
-                                          }}
-                                          className="text-purple-600 hover:text-purple-800 underline cursor-pointer font-medium truncate bg-transparent border-none p-0 text-left"
-                                          title="Télécharger le fichier"
-                                        >
-                                          {deliverable.submission.fileName}
-                                        </button>
-                                        {deliverable.submission.fileSize && (
-                                          <span className="text-gray-500 text-xs flex-shrink-0">({formatFileSize(deliverable.submission.fileSize)})</span>
-                                        )}
-                                      </>
-                                    ) : null}
-                                  </div>
-
-                                  {/* Statut de validation */}
-                                  <div className="flex items-center gap-1 text-sm">
-                                    {deliverable.submission.validationStatus === 'valid' ? (
-                                      <CheckCircle className="h-3 w-3 text-green-600" />
-                                    ) : deliverable.submission.validationStatus === 'invalid' ? (
-                                      <XCircle className="h-3 w-3 text-red-600" />
-                                    ) : (
-                                      <Clock className="h-3 w-3 text-orange-600" />
-                                    )}
-                                    <span className={`font-medium text-xs ${
-                                      deliverable.submission.validationStatus === 'valid' ? 'text-green-600' :
-                                      deliverable.submission.validationStatus === 'invalid' ? 'text-red-600' :
-                                      'text-orange-600'
-                                    }`}>
-                                      {deliverable.submission.validationStatus === 'valid' ? 'Validé' :
-                                      deliverable.submission.validationStatus === 'invalid' ? 'Erreurs' :
-                                      'En validation'}
-                                    </span>
-                                  </div>
-
-                                  {/* Indicateur de retard */}
-                                  {deliverable.submission.isLate && (
-                                    <div className="flex items-center gap-1 text-sm">
-                                      <AlertTriangle className="h-3 w-3 text-orange-600" />
-                                      <span className="text-orange-600 text-xs font-medium">
-                                        +{deliverable.submission.hoursLate}h
-                                      </span>
-                                    </div>
-                                  )}
-
-                                  {/* Actions - Télécharger/Ouvrir */}
-                                  <div className="flex items-center gap-2">
-                                    {/* Bouton de téléchargement pour les fichiers */}
-                                    {deliverable.submission.type === 'archive' && deliverable.submission.fileName && (
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        className="gap-1 text-blue-600 border-blue-300 hover:bg-blue-50"
-                                        onClick={() => handleDownloadSubmission(deliverable.submission!.id!, deliverable.submission!.fileName!)}
-                                      >
-                                        <Download className="h-3 w-3" />
-                                        Télécharger
-                                      </Button>
-                                    )}
-
-                                    {/* Bouton pour ouvrir le lien Git */}
-                                    {deliverable.submission.type === 'git' && deliverable.submission.gitUrl && (
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        className="gap-1 text-blue-600 border-blue-300 hover:bg-blue-50"
-                                        onClick={() => window.open(deliverable.submission!.gitUrl!, '_blank')}
-                                      >
-                                        <Link className="h-3 w-3" />
-                                        Ouvrir
-                                      </Button>
-                                    )}
-                                  </div>
-
-                                  {/* Bouton de suppression */}
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="gap-1 text-red-600 border-red-300 hover:bg-red-50 flex-shrink-0"
-                                    onClick={() => handleDeleteSubmission(deliverable.submission!.id!, deliverable.name)}
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                    Supprimer
-                                  </Button>
-                                </div>
-
-                              </div>
-                            )}
                           </div>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
@@ -564,15 +427,157 @@ const StudentProjectDeliverablesTab: React.FC = () => {
                           <Badge variant="outline">
                             {deliverable.type === 'git' ? 'Git' : 'Archive'}
                           </Badge>
+                          {isExpired && !deliverable.allowLateSubmission && (
+                            <Badge variant="destructive">
+                              Expiré
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="ml-6.5">
+                      {/* Règles du livrable */}
+                      {deliverable.rules && deliverable.rules.length > 0 && (
+                        <div className="mt-3 mb-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                          <h4 className="text-sm font-medium text-blue-900 mb-2">Règles :</h4>
+                          <div className="space-y-1 text-xs text-blue-700">
+                            {deliverable.rules.map((rule, index) => (
+                              <div key={index} className="flex items-center gap-1">
+                                <Dot className="h-6 w-6" />
+                                {rule.description || `Règle ${rule.type.replace('_', ' ')}`}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Résumé de la soumission */}
+                      {deliverable.submission && (
+                        <div className="mb-4 p-3 bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg">
+                          <div className="flex items-center w-full gap-4">
+                            <div className="flex items-center gap-2">
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                              <span className="text-sm font-semibold text-green-800">Soumis</span>
+                            </div>
+
+                            {/* Date et heure */}
+                            <div className="flex items-center gap-1 text-sm">
+                              <Calendar className="h-3.5 w-3.5 text-black-500" />
+                              <span>{new Date(deliverable.submission.submissionDate!).toLocaleDateString('fr-FR')}</span>
+                              <Clock className="h-3.5 w-3.5 text-black-500 ml-2" />
+                              <span>{new Date(deliverable.submission.submissionDate!).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
+                            </div>
+
+                            {/* Nom du fichier ou URL Git */}
+                            <div
+                              className="flex items-center gap-1 text-sm flex-1 min-w-0"
+                            >
+                              {deliverable.submission?.gitUrl ? (
+                                <>
+                                  <Link className="h-3.5 w-3.5 text-blue-600 flex-shrink-0" />
+                                  <div className="group relative inline-block flex-1 min-w-0">
+                                    <a
+                                      href={deliverable.submission!.gitUrl!}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-purple-600 hover:text-purple-800 underline cursor-pointer font-medium truncate block"
+                                    >
+                                      {deliverable.submission!.gitUrl}
+                                    </a>
+                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-1 text-xs text-white bg-gray-900 rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20">
+                                      Ouvrir le lien GitHub dans une nouvelle fenêtre
+                                      <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                                    </div>
+                                  </div>
+                                </>
+                              ) : deliverable.submission?.fileName ? (
+                                <>
+                                  <ArrowDownToLine className="h-3.5 w-3.5 text-black-600 flex-shrink-0" />
+                                  <div className="group relative inline-block flex-1 min-w-0">
+                                    <button
+                                      onClick={() => {
+                                        handleDownloadSubmission(deliverable.submission!.id!, deliverable.submission!.fileName!);
+                                      }}
+                                      className="text-black-600 hover:text-black-800 underline cursor-pointer font-medium truncate bg-transparent border-none p-0 text-left block"
+                                    >
+                                      {deliverable.submission.fileName}
+                                    </button>
+                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-1 text-xs text-white bg-gray-900 rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20">
+                                      Télécharger le fichier
+                                      <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                                    </div>
+                                  </div>
+                                  {deliverable.submission.fileSize && (
+                                    <span className="text-gray-500 text-xs flex-shrink-0">({formatFileSize(deliverable.submission.fileSize)})</span>
+                                  )}
+                                </>
+                              ) : null}
+                            </div>
+
+                            {/* Indicateur de retard */}
+                            {deliverable.submission.isLate && (
+                              <div className="flex items-center gap-1 text-sm">
+                                <AlertTriangle className="h-3 w-3 text-orange-600" />
+                                <span className="text-orange-600 text-xs font-medium">
+                                  +{deliverable.submission.hoursLate}h
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Actions - Télécharger/Ouvrir */}
+                            <div className="flex items-center gap-2">
+                              {/* Bouton de téléchargement pour les fichiers */}
+                              {deliverable.submission.type === 'archive' && deliverable.submission.fileName && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="gap-1 text-blue-600 border-blue-300 hover:bg-blue-50"
+                                  onClick={() => handleDownloadSubmission(deliverable.submission!.id!, deliverable.submission!.fileName!)}
+                                >
+                                  <Download className="h-3 w-3" />
+                                  Télécharger
+                                </Button>
+                              )}
+
+                              {/* Bouton pour ouvrir le lien Git */}
+                              {deliverable.submission.type === 'git' && deliverable.submission.gitUrl && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="gap-1 text-blue-600 border-blue-300 hover:bg-blue-50"
+                                  onClick={() => window.open(deliverable.submission!.gitUrl!, '_blank')}
+                                >
+                                  <Link className="h-3 w-3" />
+                                  Ouvrir
+                                </Button>
+                              )}
+                            </div>
+
+                            {/* Bouton de suppression - Désactivé si expiré ET retards non autorisés */}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-1 text-red-600 border-red-300 hover:bg-red-50 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                              onClick={() => handleDeleteSubmission(deliverable.submission!.id!, deliverable.name)}
+                              disabled={isExpired && !deliverable.allowLateSubmission}
+                              title={
+                                isExpired && !deliverable.allowLateSubmission
+                                  ? "Impossible de supprimer : livrable expiré et retards non autorisés"
+                                  : "Supprimer cette soumission"
+                              }
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              Supprimer
+                            </Button>
+                          </div>
+                        </div>
+                       )}
+
                       <div className="flex items-center justify-between pt-4 border-t">
                         <div className="flex items-center gap-2">
                           {deliverable.allowLateSubmission && (
                             <div className="text-xs text-orange-600">
-                              <AlertTriangle className="h-3 w-3 inline mr-1" />
+                              <AlertTriangle className="h-4 w-4 inline mr-1 mb-1" />
                               Retard autorisé (-{deliverable.latePenaltyPerHour} pts/h)
                             </div>
                           )}
@@ -589,16 +594,31 @@ const StudentProjectDeliverablesTab: React.FC = () => {
                               {deliverable.submission ? 'Modifier' : 'Soumettre'}
                             </Button>
                           )}
-                          {isExpired && deliverable.allowLateSubmission && !deliverable.submission && (
+                          {/* Bouton modifier/soumettre pour les livrables expirés avec retards autorisés */}
+                          {isExpired && deliverable.allowLateSubmission && (
                             <Button
                               size="sm"
                               variant="outline"
-                              className="gap-1 text-orange-600"
+                              className="gap-1 text-orange-600 border-orange-300 hover:bg-orange-50"
                               onClick={() => handleOpenSubmission(deliverable)}
                               disabled={submitting}
+                              title={deliverable.submission ? "Modifier la soumission (en retard)" : "Soumettre en retard"}
                             >
                               <AlertTriangle className="h-4 w-4" />
-                              Soumettre en retard
+                              {deliverable.submission ? 'Modifier (retard)' : 'Soumettre en retard'}
+                            </Button>
+                          )}
+                          {/* Bouton grisé si expiré et retards non autorisés */}
+                          {isExpired && !deliverable.allowLateSubmission && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-1 opacity-50 cursor-not-allowed"
+                              disabled={true}
+                              title={deliverable.submission ? "Impossible de modifier : livrable expiré et retards non autorisés" : "Impossible de soumettre : livrable expiré et retards non autorisés"}
+                            >
+                              <Upload className="h-4 w-4" />
+                              {deliverable.submission ? 'Modifier' : 'Soumettre'}
                             </Button>
                           )}
                         </div>
@@ -626,6 +646,36 @@ const StudentProjectDeliverablesTab: React.FC = () => {
           uploadProgress={uploadProgress}
         />
       )}
+
+      {/* Dialog de confirmation de suppression */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader >
+            <AlertDialogTitle className="flex items-center gap-2">
+              Confirmer la suppression
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4 pt-4">
+              <div>
+                Êtes-vous sûr de vouloir supprimer votre soumission pour{' '}
+                <span className="font-semibold">"{submissionToDelete?.deliverableName}"</span> ?
+              </div>
+              <div className="flex items-center gap-2 text-red-600 font-medium bg-red-50 p-3 rounded-lg border border-red-200">
+                <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                <span>Cette action est irréversible et supprimera définitivement votre fichier.</span>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="pt-6">
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteSubmission}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

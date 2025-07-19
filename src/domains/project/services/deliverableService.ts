@@ -26,6 +26,9 @@ const handleApiResponse = async (response: Response) => {
       window.location.href = '/login';
       throw new Error('Votre session a expiré. Veuillez vous reconnecter.');
     }
+    if (response.status === 413) {
+      throw new Error('Fichier trop volumineux. Vérifiez la taille maximale autorisée.');
+    }
     throw new Error(data.message || 'Une erreur est survenue');
   }
   return data.data || data;

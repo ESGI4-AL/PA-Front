@@ -114,7 +114,6 @@ export const useStudentDeliverables = (projectId: string): UseStudentDeliverable
   const deleteSubmissionHandler = async (submissionId: string): Promise<void> => {
     try {
       await deleteSubmission(submissionId);
-      toast.success('Soumission supprimée avec succès !');
 
       await fetchDeliverables();
     } catch (error) {
