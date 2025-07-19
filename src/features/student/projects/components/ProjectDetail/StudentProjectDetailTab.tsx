@@ -15,14 +15,19 @@ import {
 } from "lucide-react";
 import { ProjectStatus, GroupFormationMethod } from '@/domains/project/models/projectModels';
 import { useStudentProjects } from '../../hooks/useStudentProjects';
+import { useStudentDeliverables } from '../../hooks/useStudentDeliverables';
 
 interface StudentProjectDetailTabProps {
   projectId: string | undefined;
 }
 
 const StudentProjectDetailTab: React.FC<StudentProjectDetailTabProps> = ({ projectId }) => {
-  const { fetchProjectById, loading, error } = useStudentProjects();
+  const { fetchProjectById, loading: projectLoading, error: projectError } = useStudentProjects();
+  const { deliverables, loading: deliverablesLoading, error: deliverablesError } = useStudentDeliverables(projectId || '');
   const [project, setProject] = useState<any>(null);
+
+  const loading = projectLoading || deliverablesLoading;
+  const error = projectError || deliverablesError;
 
   useEffect(() => {
     const loadProject = async () => {
@@ -87,6 +92,85 @@ const StudentProjectDetailTab: React.FC<StudentProjectDetailTabProps> = ({ proje
       return `${project.minGroupSize} étudiant${project.minGroupSize > 1 ? 's' : ''}`;
     }
     return `${project.minGroupSize} à ${project.maxGroupSize} étudiants`;
+  };
+
+  const getDeliverableStatusBadges = (deliverable: any) => {
+    const now = new Date();
+    const deadline = new Date(deliverable.deadline);
+    const isExpired = now > deadline;
+    const badges = [];
+
+    if (deliverable.submission) {
+      if (deliverable.submission.validationStatus === 'valid') {
+        badges.push(
+          <Badge key="submitted" variant="default" className="bg-green-100 text-green-800">
+            Soumis ✓
+          </Badge>
+        );
+      } else if (deliverable.submission.validationStatus === 'invalid') {
+        badges.push(
+          <Badge key="submitted" variant="destructive">
+            Soumis (erreurs)
+          </Badge>
+        );
+      } else {
+        badges.push(
+          <Badge key="submitted" variant="secondary">
+            En validation
+          </Badge>
+        );
+      }
+
+      // Afficher la date de soumission si disponible
+      if (deliverable.submission.submissionDate) {
+        const submissionDate = new Date(deliverable.submission.submissionDate);
+        badges.push(
+          <Badge key="submission-date" variant="outline" className="text-xs">
+            Soumis le {submissionDate.toLocaleDateString('fr-FR')}
+          </Badge>
+        );
+      }
+    } else {
+      badges.push(
+        <Badge key="not-submitted" variant="outline">
+          Non soumis
+        </Badge>
+      );
+    }
+
+    // Badge d'expiration
+    if (isExpired) {
+      if (deliverable.allowLateSubmission) {
+        badges.push(
+          <Badge key="expired" variant="secondary" className="bg-orange-100 text-orange-800">
+            Expiré (modifiable)
+          </Badge>
+        );
+      } else {
+        badges.push(
+          <Badge key="expired" variant="destructive">
+            Expiré
+          </Badge>
+        );
+      }
+    } else if (deadline.getTime() - now.getTime() < 24 * 60 * 60 * 1000) {
+      badges.push(
+        <Badge key="urgent" variant="secondary" className="bg-red-100 text-red-800">
+          Urgent
+        </Badge>
+      );
+    }
+
+    // Badge de retard si applicable
+    if (deliverable.submission && deliverable.submission.isLate) {
+      badges.push(
+        <Badge key="late" variant="secondary" className="bg-yellow-100 text-yellow-800">
+          En retard (+{deliverable.submission.hoursLate}h)
+        </Badge>
+      );
+    }
+
+    return badges;
   };
 
   if (loading) {
@@ -265,28 +349,31 @@ const StudentProjectDetailTab: React.FC<StudentProjectDetailTabProps> = ({ proje
         </CardContent>
       </Card>
 
-      {project.deliverables && project.deliverables.length > 0 && (
+      {deliverables && deliverables.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <FileText className="h-5 w-5" />
-              Livrables du projet ({project.deliverables.length})
+              Livrables du projet ({deliverables.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {project.deliverables.map((deliverable: any, index: number) => (
+              {deliverables.map((deliverable: any, index: number) => (
                 <div key={deliverable.id}>
                   <div className="flex justify-between items-start p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                    <div className="space-y-1">
+                    <div className="space-y-2 flex-1">
                       <h4 className="font-medium">{deliverable.name}</h4>
                       {deliverable.description && (
                         <p className="text-sm text-muted-foreground">
                           {deliverable.description}
                         </p>
                       )}
+                      <div className="flex flex-wrap gap-2">
+                        {getDeliverableStatusBadges(deliverable)}
+                      </div>
                     </div>
-                    <div className="text-right space-y-1">
+                    <div className="text-right space-y-1 ml-4">
                       <div className="flex items-center gap-2">
                         <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm font-medium">
@@ -294,11 +381,11 @@ const StudentProjectDetailTab: React.FC<StudentProjectDetailTabProps> = ({ proje
                         </span>
                       </div>
                       <Badge variant="outline" className="text-xs">
-                        {deliverable.type}
+                        {deliverable.type === 'git' ? 'Git' : 'Archive'}
                       </Badge>
                     </div>
                   </div>
-                  {index < project.deliverables.length - 1 && (
+                  {index < deliverables.length - 1 && (
                     <Separator className="my-3" />
                   )}
                 </div>
