@@ -45,6 +45,8 @@ import { useDeliverables } from '../../hooks/useDeliverables';
 import { useEvaluations } from '../../hooks/useEvaluations';
 import { downloadSubmissionFile } from '@/domains/project/services/deliverableService';
 import { toast } from 'sonner';
+import SimilarityAnalysisDialog from './SimilarityAnalysisDialog';
+import { BackendSimilarityAnalysisResult } from '../../types/backend.types';
 
 const Switch = ({ checked, onCheckedChange, ...props }: any) => (
   <input
@@ -92,6 +94,7 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
     deleteDeliverable,
     analyzeSimilarity,
     getDeliverableSummary,
+    getSubmissionContent,
     refetch
   } = useDeliverables(projectId || '');
 
@@ -110,6 +113,7 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
   const [isSummaryDialogOpen, setIsSummaryDialogOpen] = useState(false);
   const [isGradingDialogOpen, setIsGradingDialogOpen] = useState(false);
   const [isCreateCriteriaDialogOpen, setIsCreateCriteriaDialogOpen] = useState(false);
+  const [isSimilarityDialogOpen, setIsSimilarityDialogOpen] = useState(false);
 
   const [deliverableToEdit, setDeliverableToEdit] = useState<any>(null);
   const [deliverableToDelete, setDeliverableToDelete] = useState<string | null>(null);
@@ -117,6 +121,7 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
   const [selectedDeliverableForGrading, setSelectedDeliverableForGrading] = useState<any>(null);
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
   const [deliverableGroups, setDeliverableGroups] = useState<{[key: string]: any}>({});
+  const [selectedDeliverableForSimilarity, setSelectedDeliverableForSimilarity] = useState<any>(null);
 
   const [deliverableForm, setDeliverableForm] = useState<DeliverableForm>({
     name: '',
@@ -203,16 +208,15 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
   };
 
   const handleAnalyzeSimilarity = async (deliverableId: string) => {
-    setAnalyzingId(deliverableId);
-    try {
-      const result = await analyzeSimilarity(deliverableId);
-      toast.success(`Analyse terminée: ${result.suspiciousPairs?.length || 0} paires suspectes détectées`);
-    } catch (error) {
-      console.error('Erreur analyse similarité:', error);
-      toast.error('Erreur lors de l\'analyse');
-    } finally {
-      setAnalyzingId(null);
+    // Trouver le livrable pour stocker les informations
+    const deliverable = safeDeliverables.find(d => d.id === deliverableId);
+    if (!deliverable) {
+      toast.error('Livrable non trouvé');
+      return;
     }
+
+    setSelectedDeliverableForSimilarity(deliverable);
+    setIsSimilarityDialogOpen(true);
   };
 
   const handleRefreshDeliverables = async () => {
@@ -277,6 +281,80 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
   // TODO : a modifier pour ouvrir la feuille de notation dans le tab evaluation
   const handleOpenGradingSheet = (group: any, deliverable: any) => {
   };
+
+  const handleCloseSimilarityDialog = () => {
+    setIsSimilarityDialogOpen(false);
+    setSelectedDeliverableForSimilarity(null);
+  };
+
+  // Wrapper pour adapter les types de la fonction analyzeSimilarity vers BackendSimilarityAnalysisResult
+  const handleAnalyzeSimilarityForDialog = async (deliverableId: string): Promise<BackendSimilarityAnalysisResult> => {
+    try {
+      // Utilise directement ton hook qui retourne déjà le bon format
+      const result = await analyzeSimilarity(deliverableId);
+
+      // Si ton hook retourne le type du hook (SimilarityAnalysisResult), on l'adapte
+      const deliverable = safeDeliverables.find(d => d.id === deliverableId);
+
+      // Adaptation simple vers le type Backend attendu par le dialog
+      const adaptedResult: BackendSimilarityAnalysisResult = {
+        deliverableId: result.deliverableId,
+        deliverableName: deliverable?.name || result.deliverableName || 'Livrable inconnu',
+        submissionsCount: result.submissionsCount,
+        validSubmissionsCount: result.validSubmissionsCount || result.submissionsCount,
+        comparisons: result.comparisons.map((comp: any) => ({
+          submission1Id: comp.submission1Id,
+          submission2Id: comp.submission2Id,
+          group1: comp.group1,
+          group2: comp.group2,
+          similarityScore: comp.similarityScore,
+          similarityPercentage: comp.similarityPercentage,
+          method: comp.method,
+          algorithms: comp.algorithms || [],
+          details: comp.details || {
+            file1: 'file1.txt',
+            file2: 'file2.txt',
+            type1: 'text',
+            type2: 'text',
+            timestamp: new Date().toISOString()
+          },
+          isSuspicious: comp.isSuspicious,
+          comparedAt: comp.comparedAt
+        })),
+        suspiciousPairs: result.suspiciousPairs || [],
+        similarityMatrix: result.similarityMatrix || {},
+        statistics: result.statistics || {
+          totalComparisons: result.comparisons?.length || 0,
+          successfulComparisons: result.comparisons?.length || 0,
+          errorCount: 0,
+          suspiciousCount: result.suspiciousPairs?.length || 0,
+          averageSimilarity: 0,
+          maxSimilarity: 0
+        },
+        threshold: result.threshold || 0.8,
+        submissions: result.submissions?.map((sub: any) => ({
+          id: sub.id,
+          groupId: sub.groupId,
+          groupName: sub.groupName,
+          fileName: sub.fileName,
+          fileSize: sub.fileSize,
+          filePath: sub.filePath,
+          gitUrl: sub.gitUrl,
+          submissionDate: sub.submissionDate,
+          isLate: sub.isLate,
+          validationStatus: sub.validationStatus as 'pending' | 'valid' | 'invalid', // CORRECTION du type
+          similarityScore: sub.similarityScore
+        })) || [],
+        processedAt: result.processedAt || new Date().toISOString()
+      };
+
+      return adaptedResult;
+    } catch (error) {
+      console.error('Erreur lors de l\'analyse de similarité:', error);
+      throw error;
+    }
+  };
+
 
   const openEditDialog = (deliverable: any) => {
     setDeliverableToEdit(deliverable);
@@ -1762,6 +1840,16 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog d'analyse de similarité */}
+      <SimilarityAnalysisDialog
+        isOpen={isSimilarityDialogOpen}
+        onClose={handleCloseSimilarityDialog}
+        deliverableId={selectedDeliverableForSimilarity?.id || ''}
+        deliverableName={selectedDeliverableForSimilarity?.name || ''}
+        onAnalyze={handleAnalyzeSimilarityForDialog}
+        getSubmissionContent={getSubmissionContent}
+      />
     </div>
   );
 };

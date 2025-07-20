@@ -58,7 +58,6 @@ export const getProjectDeliverables = async (projectId: string): Promise<Student
 
       const submission = deliverable.submission || deliverable.submissions?.[0] || null;
 
-      // Log pour débug si soumission trouvée
       if (submission) {
         totalSubmissionsCount++;
         const isFirebaseStored = !!(submission.filePath || submission.gitUrl);
