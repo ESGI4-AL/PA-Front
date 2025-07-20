@@ -120,16 +120,16 @@ export const useDeliverables = (projectId: string) => {
       setError(null);
 
       const response = await apiCall(`/projects/${projectId}/deliverables`);
-      
+
       if (response.status === 'success') {
         const deliverablesList = response.data || [];
         setDeliverables(deliverablesList);
-        
+
         const now = new Date();
         const total = deliverablesList.length;
         const active = deliverablesList.filter((d: Deliverable) => new Date(d.deadline) > now).length;
         const expired = total - active;
-        
+
         setStats({
           totalDeliverables: total,
           activeDeliverables: active,
@@ -148,7 +148,7 @@ export const useDeliverables = (projectId: string) => {
   const createDeliverable = async (deliverableData: DeliverableForm) => {
     try {
       setLoading(true);
-      
+
       const response = await apiCall(`/projects/${projectId}/deliverables`, {
         method: 'POST',
         body: JSON.stringify(deliverableData),
@@ -173,7 +173,7 @@ export const useDeliverables = (projectId: string) => {
   const updateDeliverable = async (deliverableId: string, updateData: Partial<DeliverableForm>) => {
     try {
       setLoading(true);
-      
+
       const response = await apiCall(`/deliverables/${deliverableId}`, {
         method: 'PUT',
         body: JSON.stringify(updateData),
@@ -198,7 +198,7 @@ export const useDeliverables = (projectId: string) => {
   const deleteDeliverable = async (deliverableId: string) => {
     try {
       setLoading(true);
-      
+
       const response = await apiCall(`/deliverables/${deliverableId}`, {
         method: 'DELETE',
       });
@@ -229,7 +229,7 @@ export const useDeliverables = (projectId: string) => {
         toast.success('Analyse de similarité terminée');
         return response.data;
       }
-      
+
       throw new Error('Réponse API invalide');
     } catch (error) {
       console.error('Erreur lors de l\'analyse de similarité:', error);
@@ -246,7 +246,7 @@ export const useDeliverables = (projectId: string) => {
       if (response.status === 'success') {
         return response.data;
       }
-      
+
       throw new Error('Réponse API invalide');
     } catch (error) {
       console.error('Erreur lors de la récupération du résumé:', error);
@@ -285,14 +285,14 @@ export const useDeliverables = (projectId: string) => {
     loading,
     error,
     stats,
-    
+
     createDeliverable,
     updateDeliverable,
     deleteDeliverable,
     analyzeSimilarity,
     getDeliverableSummary,
     sendDeadlineReminders,
-    
+
     refetch: fetchDeliverables,
   };
 };

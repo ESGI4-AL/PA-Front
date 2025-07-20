@@ -1,42 +1,49 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { 
-  Package, 
-  Plus, 
-  Calendar, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
-  AlertTriangle, 
-  Eye, 
-  Edit, 
-  Trash2, 
-  Download, 
-  GitBranch, 
-  Archive, 
-  Settings, 
+import {
+  Package,
+  Plus,
+  Calendar,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Edit,
+  Trash2,
+  GitBranch,
+  Archive,
   BarChart3,
   Users,
-  FileText,
   AlertCircle,
-  Target,
-  Timer,
   Star,
   Save,
-  Send
+  LibraryBig,
+  MoreHorizontal,
+  Download,
+  Link,
+  ArrowDownToLine,
+  RefreshCw
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
 import { Alert, AlertDescription } from '@/shared/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/shared/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/shared/components/ui/dropdown-menu';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
 import { Textarea } from '@/shared/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/shared/components/ui/accordion';
 import { useDeliverables } from '../../hooks/useDeliverables';
 import { useEvaluations } from '../../hooks/useEvaluations';
+import { downloadSubmissionFile } from '@/domains/project/services/deliverableService';
 import { toast } from 'sonner';
 
 const Switch = ({ checked, onCheckedChange, ...props }: any) => (
@@ -47,15 +54,6 @@ const Switch = ({ checked, onCheckedChange, ...props }: any) => (
     className="w-9 h-5 bg-gray-200 rounded-full relative appearance-none cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 checked:bg-blue-600"
     {...props}
   />
-);
-
-const Progress = ({ value = 0, className = "", ...props }: any) => (
-  <div className={`w-full bg-gray-200 rounded-full h-2 ${className}`} {...props}>
-    <div
-      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-      style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
-    />
-  </div>
 );
 
 interface ValidationRule {
@@ -83,7 +81,7 @@ interface GradeInput {
 
 const TeacherProjectDeliverablesTab: React.FC = () => {
   const { id: projectId } = useParams<{ id: string }>();
-  
+
   const {
     deliverables,
     loading,
@@ -93,7 +91,8 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
     updateDeliverable,
     deleteDeliverable,
     analyzeSimilarity,
-    getDeliverableSummary
+    getDeliverableSummary,
+    refetch
   } = useDeliverables(projectId || '');
 
   const {
@@ -104,19 +103,20 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
     gradeStudent,
     createEvaluationCriteria
   } = useEvaluations(projectId || '');
-  
+
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isSummaryDialogOpen, setIsSummaryDialogOpen] = useState(false);
   const [isGradingDialogOpen, setIsGradingDialogOpen] = useState(false);
   const [isCreateCriteriaDialogOpen, setIsCreateCriteriaDialogOpen] = useState(false);
-  
+
   const [deliverableToEdit, setDeliverableToEdit] = useState<any>(null);
   const [deliverableToDelete, setDeliverableToDelete] = useState<string | null>(null);
   const [selectedDeliverableSummary, setSelectedDeliverableSummary] = useState<any>(null);
   const [selectedDeliverableForGrading, setSelectedDeliverableForGrading] = useState<any>(null);
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
+  const [deliverableGroups, setDeliverableGroups] = useState<{[key: string]: any}>({});
 
   const [deliverableForm, setDeliverableForm] = useState<DeliverableForm>({
     name: '',
@@ -175,7 +175,7 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
   const handleEditDeliverable = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!deliverableToEdit) return;
-    
+
     try {
       await updateDeliverable(deliverableToEdit.id, deliverableForm);
       setIsEditDialogOpen(false);
@@ -190,7 +190,7 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
 
   const handleDeleteDeliverable = async () => {
     if (!deliverableToDelete) return;
-    
+
     try {
       await deleteDeliverable(deliverableToDelete);
       setIsDeleteDialogOpen(false);
@@ -215,25 +215,13 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
     }
   };
 
-  const handleViewSummary = async (deliverable: any) => {
+  const handleRefreshDeliverables = async () => {
     try {
-      const summary = await getDeliverableSummary(deliverable.id);
-      setSelectedDeliverableSummary(summary);
-      setIsSummaryDialogOpen(true);
+      await refetch();
+      toast.success('La liste des livrables a été actualisée !');
     } catch (error) {
-      console.error('Erreur récupération résumé:', error);
-      toast.error('Erreur lors de la récupération du résumé');
-    }
-  };
-
-  const handleOpenGrading = async (deliverable: any) => {
-    try {
-      const summary = await getDeliverableSummary(deliverable.id);
-      setSelectedDeliverableForGrading(summary);
-      setIsGradingDialogOpen(true);
-    } catch (error) {
-      console.error('Erreur récupération données notation:', error);
-      toast.error('Erreur lors de la récupération des données');
+      console.error('Erreur actualisation:', error);
+      toast.error('Erreur lors de l\'actualisation');
     }
   };
 
@@ -259,7 +247,7 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
   const handleGradeSubmit = async (criteriaId: string, groupId: string, studentId?: string) => {
     const gradeKey = `${criteriaId}-${groupId}${studentId ? `-${studentId}` : ''}`;
     const gradeData = gradeInputs[gradeKey];
-    
+
     if (!gradeData || gradeData.score < 0 || gradeData.score > 20) {
       toast.error('Veuillez saisir une note valide (0-20)');
       return;
@@ -271,19 +259,23 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
       } else {
         await gradeGroup(criteriaId, groupId, gradeData);
       }
-      
+
       // Réinitialiser le champ de saisie
       setGradeInputs(prev => {
         const newInputs = { ...prev };
         delete newInputs[gradeKey];
         return newInputs;
       });
-      
+
       toast.success('Note enregistrée avec succès');
     } catch (error) {
       console.error('Erreur attribution note:', error);
       toast.error('Erreur lors de l\'attribution de la note');
     }
+  };
+
+  // TODO : a modifier pour ouvrir la feuille de notation dans le tab evaluation
+  const handleOpenGradingSheet = (group: any, deliverable: any) => {
   };
 
   const openEditDialog = (deliverable: any) => {
@@ -319,17 +311,61 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
 
   const addRule = () => {
     if (!newRule.description) return;
-    
+
     setDeliverableForm(prev => ({
       ...prev,
       rules: [...prev.rules, { ...newRule, id: Date.now().toString() }]
     }));
-    
+
     setNewRule({
       type: 'file_size',
       rule: {},
       description: ''
     });
+  };
+
+  const handleAccordionChange = async (value: string, deliverableId: string) => {
+    // Si l'accordion s'ouvre et qu'on n'a pas encore les données des groupes
+    if (value === `groups-${deliverableId}` && !deliverableGroups[deliverableId]) {
+      try {
+        const summary = await getDeliverableSummary(deliverableId);
+        setDeliverableGroups(prev => ({
+          ...prev,
+          [deliverableId]: summary
+        }));
+      } catch (error) {
+        console.error('Erreur lors du chargement des groupes:', error);
+      }
+    }
+  };
+
+  // Fonction pour télécharger une soumission de groupe
+  const handleDownloadSubmission = async (submissionId: string, fileName: string) => {
+    try {
+      await downloadSubmissionFile(submissionId, fileName);
+      toast.success(`Fichier "${fileName}" téléchargé avec succès !`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erreur lors du téléchargement';
+      toast.error(`Erreur: ${errorMessage}`);
+    }
+  };
+
+  // Fonction pour ouvrir un lien Git
+  const handleOpenGitUrl = (gitUrl: string) => {
+    try {
+      window.open(gitUrl, '_blank', 'noopener,noreferrer');
+    } catch (error) {
+      toast.error('Erreur lors de l\'ouverture du lien');
+    }
+  };
+
+  // Fonction pour formater la taille de fichier
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   const removeRule = (index: number) => {
@@ -388,7 +424,7 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
                     rule: { ...prev.rule, structure }
                   }));
                 } catch (error) {
-                 
+
                 }
               }}
             />
@@ -423,21 +459,77 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
   };
 
   const getDeliverableIcon = (type: string) => {
-    return type === 'git' ? <GitBranch className="h-4 w-4" /> : <Archive className="h-4 w-4" />;
+    return type === 'git' ? <GitBranch className="h-4 w-4" /> : <Package className="h-4 w-4" />;
   };
 
   const getStatusBadge = (deliverable: any) => {
     const now = new Date();
     const deadline = new Date(deliverable.deadline);
     const isExpired = now > deadline;
-    
+
     if (isExpired) {
       return <Badge variant="destructive">Expiré</Badge>;
     } else if (deadline.getTime() - now.getTime() < 24 * 60 * 60 * 1000) {
-      return <Badge variant="secondary">Bientôt</Badge>;
+      return <Badge variant="outline" className="border-yellow-500 text-yellow-700 bg-yellow-50">Bientôt</Badge>;
     } else {
-      return <Badge variant="default">Actif</Badge>;
+      return <Badge variant="outline" className="border-green-500 text-green-700 bg-green-50">Actif</Badge>;
     }
+  };
+
+  const getLateSubmissionBadge = (deliverable: any) => {
+    if (deliverable.allowLateSubmission) {
+      const penalty = deliverable.latePenaltyPerHour || 0;
+      return (
+        <Badge variant="outline" className="border-orange-500 text-orange-700 bg-orange-50">
+          Retard autorisé (-{penalty}pts/h)
+        </Badge>
+      );
+    }
+    return null;
+  };
+
+  // Fonction pour obtenir le badge de statut de soumission
+  const getSubmissionStatusBadge = (submission: any, deliverable: any, isSmall = false) => {
+    const sizeClass = isSmall ? "text-xs" : "";
+
+    if (!submission) {
+      return <Badge variant="outline" className={`border-gray-400 text-gray-600 bg-gray-50 ${sizeClass}`}>Non Soumis</Badge>;
+    }
+
+    // Vérifier si le fichier existe (pour les soumissions non-Git)
+    const hasValidFile = submission.gitUrl || (submission.fileName && submission.fileExists !== false);
+
+    // Si la soumission n'a pas de fichier valide, considérer comme invalide
+    if (!hasValidFile) {
+      return <Badge variant="destructive" className={sizeClass}>Fichier manquant</Badge>;
+    }
+
+    const deadline = new Date(deliverable.deadline);
+    const submissionDate = new Date(submission.submissionDate);
+
+    // Si la soumission est validée
+    if (submission.validationStatus === 'valid') {
+      return <Badge variant="outline" className={`border-emerald-500 text-emerald-700 bg-emerald-50 ${sizeClass}`}>Validé</Badge>;
+    }
+
+    // Si la soumission est invalide
+    if (submission.validationStatus === 'invalid') {
+      return <Badge variant="destructive" className={sizeClass}>Invalide</Badge>;
+    }
+
+    // Si la soumission est en attente de validation
+    if (submission.validationStatus === 'pending') {
+      return <Badge variant="outline" className={`border-amber-500 text-amber-700 bg-amber-50 ${sizeClass}`}>En attente</Badge>;
+    }
+
+    // Si la soumission est en retard
+    if (submissionDate > deadline || submission.isLate) {
+      const hoursLate = submission.hoursLate ? ` (${submission.hoursLate}h)` : '';
+      return <Badge variant="outline" className={`border-red-600 text-red-700 bg-red-50 ${sizeClass}`}>En retard{hoursLate}</Badge>;
+    }
+
+    // Si la soumission est à temps
+    return <Badge variant="outline" className={`border-blue-500 text-blue-700 bg-blue-50 ${sizeClass}`}>À temps</Badge>;
   };
 
   const getDeliverableCriteria = () => {
@@ -448,20 +540,24 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
     const evaluationType = 'deliverable';
     const type = studentId ? 'individual' : 'group';
     const targetId = studentId || groupId;
-    
+
     if (grades[evaluationType] && grades[evaluationType][type] && grades[evaluationType][type][targetId]) {
       const gradesForTarget = grades[evaluationType][type][targetId].grades;
-      return gradesForTarget.find(g => g.criteriaId === criteriaId);
+      const grade = gradesForTarget.find(g => g.criteriaId === criteriaId);
+      // S'assurer que le grade existe et a un score valide
+      if (grade && typeof grade.score === 'number') {
+        return grade;
+      }
     }
     return null;
   };
 
   const safeDeliverables = Array.isArray(deliverables) ? deliverables : [];
-  const safeStats = stats || { 
-    totalDeliverables: 0, 
-    activeDeliverables: 0, 
-    expiredDeliverables: 0, 
-    submissionsRate: 0 
+  const safeStats = stats || {
+    totalDeliverables: 0,
+    activeDeliverables: 0,
+    expiredDeliverables: 0,
+    submissionsRate: 0
   };
 
   if (loading) {
@@ -483,11 +579,19 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={handleRefreshDeliverables}
+            disabled={loading}
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Actualiser
+          </Button>
           <Dialog open={isCreateCriteriaDialogOpen} onOpenChange={setIsCreateCriteriaDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" className="gap-2">
-                <Star className="h-4 w-4" />
-                Créer critère
+                Créer un critère de notation
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
@@ -508,7 +612,7 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
                     required
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="criteriaDescription">Description</Label>
                   <Textarea
@@ -519,7 +623,7 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
                     rows={3}
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="criteriaWeight">Poids</Label>
@@ -535,9 +639,9 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="criteriaType">Type</Label>
-                    <Select 
-                      value={newCriteria.type} 
-                      onValueChange={(value: 'group' | 'individual') => 
+                    <Select
+                      value={newCriteria.type}
+                      onValueChange={(value: 'group' | 'individual') =>
                         setNewCriteria(prev => ({ ...prev, type: value }))
                       }
                     >
@@ -551,11 +655,11 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
                     </Select>
                   </div>
                 </div>
-                
+
                 <div className="flex justify-end gap-2 pt-4">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
+                  <Button
+                    type="button"
+                    variant="outline"
                     onClick={() => setIsCreateCriteriaDialogOpen(false)}
                   >
                     Annuler
@@ -567,7 +671,7 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
               </form>
             </DialogContent>
           </Dialog>
-          
+
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2">
@@ -597,9 +701,9 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="type">Type</Label>
-                    <Select 
-                      value={deliverableForm.type} 
-                      onValueChange={(value: 'archive' | 'git') => 
+                    <Select
+                      value={deliverableForm.type}
+                      onValueChange={(value: 'archive' | 'git') =>
                         setDeliverableForm(prev => ({ ...prev, type: value }))
                       }
                     >
@@ -655,9 +759,9 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
                       step="0.1"
                       placeholder="0.5"
                       value={deliverableForm.latePenaltyPerHour}
-                      onChange={(e) => setDeliverableForm(prev => ({ 
-                        ...prev, 
-                        latePenaltyPerHour: parseFloat(e.target.value) || 0 
+                      onChange={(e) => setDeliverableForm(prev => ({
+                        ...prev,
+                        latePenaltyPerHour: parseFloat(e.target.value) || 0
                       }))}
                     />
                   </div>
@@ -667,7 +771,7 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
                   <Switch
                     id="allowLate"
                     checked={deliverableForm.allowLateSubmission}
-                    onCheckedChange={(checked) => 
+                    onCheckedChange={(checked: boolean) =>
                       setDeliverableForm(prev => ({ ...prev, allowLateSubmission: checked }))
                     }
                   />
@@ -710,13 +814,13 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
                   <Card className="p-4">
                     <div className="space-y-4">
                       <h4 className="font-medium">Ajouter une règle</h4>
-                      
+
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label>Type de règle</Label>
-                          <Select 
-                            value={newRule.type} 
-                            onValueChange={(value: any) => 
+                          <Select
+                            value={newRule.type}
+                            onValueChange={(value: any) =>
                               setNewRule(prev => ({ ...prev, type: value, rule: {} }))
                             }
                           >
@@ -757,9 +861,9 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
                 </div>
 
                 <div className="flex justify-end gap-2 pt-4 border-t">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
+                  <Button
+                    type="button"
+                    variant="outline"
                     onClick={() => {
                       setIsCreateDialogOpen(false);
                       resetForm();
@@ -778,7 +882,7 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
       </div>
 
       {/* Statistiques */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total livrables</CardTitle>
@@ -788,7 +892,7 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
             <div className="text-2xl font-bold">{safeStats.totalDeliverables}</div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Actifs</CardTitle>
@@ -798,7 +902,7 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
             <div className="text-2xl font-bold text-green-600">{safeStats.activeDeliverables}</div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Expirés</CardTitle>
@@ -806,16 +910,6 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">{safeStats.expiredDeliverables}</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Taux de soumission</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{safeStats.submissionsRate}%</div>
           </CardContent>
         </Card>
       </div>
@@ -832,7 +926,7 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
+            <LibraryBig className="h-5 w-5" />
             Liste des livrables
             <Badge variant="secondary" className="ml-auto">
               {safeDeliverables.length}
@@ -860,13 +954,13 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
                 const isExpired = now > deadline;
                 const timeLeft = deadline.getTime() - now.getTime();
                 const daysLeft = Math.ceil(timeLeft / (1000 * 60 * 60 * 24));
-                
+
                 return (
                   <Card key={deliverable.id} className="border-2 hover:shadow-md transition-shadow">
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3">
-                          <div className="mt-1">
+                          <div className="mt-[7px]">
                             {getDeliverableIcon(deliverable.type)}
                           </div>
                           <div>
@@ -892,70 +986,190 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
                         </div>
                         <div className="flex items-center gap-2">
                           {getStatusBadge(deliverable)}
+                          {getLateSubmissionBadge(deliverable)}
                           <Badge variant="outline">
                             {deliverable.type === 'git' ? 'Git' : 'Archive'}
                           </Badge>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => openEditDialog(deliverable)}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Modifier
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setDeliverableToDelete(deliverable.id);
+                                  setIsDeleteDialogOpen(true);
+                                }}
+                                className="text-red-600 focus:text-red-500"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Supprimer
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="flex items-center justify-between pt-4 border-t">
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleViewSummary(deliverable)}
-                            className="gap-1"
-                          >
-                            <Eye className="h-4 w-4" />
-                            Résumé
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleOpenGrading(deliverable)}
-                            className="gap-1"
-                          >
-                            <Star className="h-4 w-4" />
-                            Noter
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleAnalyzeSimilarity(deliverable.id)}
-                            disabled={analyzingId === deliverable.id}
-                            className="gap-1"
-                          >
-                            {analyzingId === deliverable.id ? (
-                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                            ) : (
-                              <BarChart3 className="h-4 w-4" />
-                            )}
-                            Analyser plagiat
-                          </Button>
+                      <div className="space-y-4">
+                        {/* Boutons d'actions */}
+                        <div className="flex items-center justify-between border-t">
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => openEditDialog(deliverable)}
-                            className="gap-1"
+
+                        {/* Section accordion pour les groupes */}
+                        <div className="w-full">
+                          <Accordion
+                            type="single"
+                            collapsible
+                            className="w-full border-b border-zinc-200 py-2"
+                            onValueChange={(value) => handleAccordionChange(value, deliverable.id)}
                           >
-                            <Edit className="h-4 w-4" />
-                            Modifier
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => {
-                              setDeliverableToDelete(deliverable.id);
-                              setIsDeleteDialogOpen(true);
-                            }}
-                            className="gap-1 text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            Supprimer
-                          </Button>
+                            <AccordionItem value={`groups-${deliverable.id}`} className='grid gap-2'>
+                              <AccordionTrigger className='p-2 rounded-md hover:bg-zinc-100'>
+                                <span className="flex items-center gap-2">
+                                  <Users className="h-4 w-4" />
+                                  Groupes
+                                </span>
+                              </AccordionTrigger>
+                              <AccordionContent className="flex flex-col gap-3">
+                                {deliverableGroups[deliverable.id] ? (
+                                  deliverableGroups[deliverable.id].groupSummaries?.map((groupSummary: any) => (
+                                    <div key={groupSummary.group.id} className="p-3 border rounded-lg bg-white shadow-sm">
+                                      <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-3">
+                                          <h4 className="font-medium text-sm">{groupSummary.group.name}</h4>
+                                        </div>
+
+                                        {/* Status badges à droite */}
+                                        <div className="flex items-center gap-2">
+                                          {getSubmissionStatusBadge(groupSummary.submission, deliverable)}
+
+                                          {/* Bouton pour ouvrir le sheet de notation - utilise le même handler */}
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="h-6 px-2 text-xs"
+                                            title="Noter ce groupe"
+                                            onClick={() => handleOpenGradingSheet(groupSummary.group, deliverable)}
+                                          >
+                                            <Star className="h-3 w-3" />
+                                          </Button>
+                                        </div>
+                                      </div>
+
+                                      {groupSummary.submission && (groupSummary.submission.gitUrl || (groupSummary.submission.fileName && groupSummary.submission.fileExists !== false)) && (
+                                        <div className="space-y-1 text-xs text-muted-foreground">
+                                          <div>
+                                            <span className="font-medium">Soumis le:</span> {' '}
+                                            {new Date(groupSummary.submission.submissionDate).toLocaleDateString('fr-FR')} à {' '}
+                                            {new Date(groupSummary.submission.submissionDate).toLocaleTimeString('fr-FR', {
+                                              hour: '2-digit',
+                                              minute: '2-digit'
+                                            })}
+                                          </div>
+
+                                          {/* Affichage du fichier ou lien Git - seulement si le fichier existe */}
+                                          {groupSummary.submission.gitUrl ? (
+                                            <div className="flex items-center gap-2 mt-2">
+                                              <GitBranch className="h-3.5 w-3.5 text-purple-600 flex-shrink-0" />
+                                              <div className="group relative inline-block flex-1 min-w-0">
+                                                <button
+                                                  onClick={() => handleOpenGitUrl(groupSummary.submission.gitUrl)}
+                                                  className="text-purple-600 hover:text-purple-800 underline cursor-pointer font-medium truncate bg-transparent border-none p-0 text-left block"
+                                                >
+                                                  {groupSummary.submission.gitUrl}
+                                                </button>
+                                                <div className="absolute bottom-full left-0 mb-2 px-3 py-1 text-xs text-white bg-gray-900 rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20">
+                                                  Ouvrir le lien GitHub dans une nouvelle fenêtre
+                                                  <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          ) : groupSummary.submission.fileName && groupSummary.submission.fileExists !== false ? (
+                                            <div className="flex items-center gap-2 mt-2">
+                                              <Download className="h-3.5 w-3.5 text-blue-600 flex-shrink-0" />
+                                              <div className="group relative inline-block flex-1 min-w-0">
+                                                <button
+                                                  onClick={() => handleDownloadSubmission(groupSummary.submission.id, groupSummary.submission.fileName)}
+                                                  className="text-blue-600 hover:text-blue-800 underline cursor-pointer font-medium truncate bg-transparent border-none p-0 text-left block"
+                                                >
+                                                  {groupSummary.submission.fileName}
+                                                  {groupSummary.submission.fileSize && (
+                                                    <span className="text-gray-500 ml-2">({formatFileSize(groupSummary.submission.fileSize)})</span>
+                                                  )}
+                                                </button>
+                                                <div className="absolute bottom-full left-0 mb-2 px-3 py-1 text-xs text-white bg-gray-900 rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20">
+                                                  Télécharger le fichier
+                                                  <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                                                </div>
+                                              </div>
+                                              <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="gap-1 text-orange-600 border-orange-300 hover:bg-orange-50 h-6 px-2 text-xs"
+                                                onClick={() => handleAnalyzeSimilarity(deliverable.id)}
+                                                disabled={analyzingId === deliverable.id}
+                                              >
+                                                {analyzingId === deliverable.id ? (
+                                                  <div className="h-3 w-3 animate-spin rounded-full border-2 border-orange-600 border-t-transparent" />
+                                                ) : (
+                                                  <BarChart3 className="h-3 w-3" />
+                                                )}
+                                                Analyser
+                                              </Button>
+                                            </div>
+                                          ) : null}
+
+                                          {groupSummary.submission.similarityScore !== null && (
+                                            <div>
+                                              <span className="font-medium">Similarité:</span> {' '}
+                                              <span className={`font-medium ${
+                                                groupSummary.submission.similarityScore > 0.8 ? 'text-red-600' :
+                                                groupSummary.submission.similarityScore > 0.6 ? 'text-orange-600' :
+                                                'text-green-600'
+                                              }`}>
+                                                {(groupSummary.submission.similarityScore * 100).toFixed(1)}%
+                                              </span>
+                                            </div>
+                                          )}
+
+                                          {groupSummary.group.students && groupSummary.group.students.length > 0 && (
+                                            <div>
+                                              <span className="font-medium">Étudiants:</span> {' '}
+                                              {groupSummary.group.students.map((student: any, index: number) => (
+                                                <span key={student.id}>
+                                                  {student.name}
+                                                  {index < groupSummary.group.students.length - 1 ? ', ' : ''}
+                                                </span>
+                                              ))}
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )) || (
+                                    <div className="text-sm text-muted-foreground text-center py-6">
+                                      Aucun groupe trouvé pour ce livrable
+                                    </div>
+                                  )
+                                ) : (
+                                  <div className="text-sm text-muted-foreground text-center py-6">
+                                    <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                    Chargement des informations des groupes...
+                                  </div>
+                                )}
+                              </AccordionContent>
+                            </AccordionItem>
+                          </Accordion>
                         </div>
                       </div>
                     </CardContent>
@@ -977,8 +1191,8 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-2 pt-4">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 setIsDeleteDialogOpen(false);
                 setDeliverableToDelete(null);
@@ -986,8 +1200,8 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
             >
               Annuler
             </Button>
-            <Button 
-              variant="destructive" 
+            <Button
+              variant="destructive"
               onClick={handleDeleteDeliverable}
               disabled={loading}
             >
@@ -1019,9 +1233,9 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="editType">Type</Label>
-                <Select 
-                  value={deliverableForm.type} 
-                  onValueChange={(value: 'archive' | 'git') => 
+                <Select
+                  value={deliverableForm.type}
+                  onValueChange={(value: 'archive' | 'git') =>
                     setDeliverableForm(prev => ({ ...prev, type: value }))
                   }
                 >
@@ -1075,9 +1289,9 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
                   min="0"
                   step="0.1"
                   value={deliverableForm.latePenaltyPerHour}
-                  onChange={(e) => setDeliverableForm(prev => ({ 
-                    ...prev, 
-                    latePenaltyPerHour: parseFloat(e.target.value) || 0 
+                  onChange={(e) => setDeliverableForm(prev => ({
+                    ...prev,
+                    latePenaltyPerHour: parseFloat(e.target.value) || 0
                   }))}
                 />
               </div>
@@ -1087,7 +1301,7 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
               <Switch
                 id="editAllowLate"
                 checked={deliverableForm.allowLateSubmission}
-                onCheckedChange={(checked) => 
+                onCheckedChange={(checked: boolean) =>
                   setDeliverableForm(prev => ({ ...prev, allowLateSubmission: checked }))
                 }
               />
@@ -1095,9 +1309,9 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
             </div>
 
             <div className="flex justify-end gap-2 pt-4 border-t">
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => {
                   setIsEditDialogOpen(false);
                   setDeliverableToEdit(null);
@@ -1182,33 +1396,78 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
                           <h4 className="font-medium">{groupSummary.group.name}</h4>
                           {groupSummary.submission ? (
                             <div className="flex items-center gap-2">
-                              {groupSummary.submission.isLate ? (
-                                <Badge variant="destructive">En retard ({groupSummary.submission.hoursLate}h)</Badge>
-                              ) : (
-                                <Badge variant="default">À temps</Badge>
-                              )}
-                              {groupSummary.submission.validationStatus === 'valid' ? (
-                                <Badge variant="default" className="bg-green-100 text-green-800">Valide</Badge>
-                              ) : groupSummary.submission.validationStatus === 'invalid' ? (
-                                <Badge variant="destructive">Invalide</Badge>
-                              ) : (
-                                <Badge variant="secondary">En attente</Badge>
-                              )}
+                              {getSubmissionStatusBadge(groupSummary.submission, selectedDeliverableSummary.deliverable)}
                             </div>
                           ) : (
-                            <Badge variant="outline">Non soumis</Badge>
+                            <Badge variant="outline" className="border-gray-400 text-gray-600 bg-gray-50">Non Soumis</Badge>
                           )}
                         </div>
-                        
-                        {groupSummary.submission && (
+
+                        {groupSummary.submission && (groupSummary.submission.gitUrl || (groupSummary.submission.fileName && groupSummary.submission.fileExists !== false)) && (
                           <div className="space-y-2 text-sm">
                             <div>
                               <span className="font-medium">Date de soumission:</span> {new Date(groupSummary.submission.submissionDate).toLocaleString('fr-FR')}
                             </div>
-                            
+
+                            {/* Affichage du fichier ou lien Git dans le dialog de résumé - seulement si le fichier existe */}
+                            {groupSummary.submission.gitUrl ? (
+                              <div className="flex items-center gap-2">
+                                <GitBranch className="h-4 w-4 text-purple-600 flex-shrink-0" />
+                                <div className="group relative inline-block flex-1 min-w-0">
+                                  <button
+                                    onClick={() => handleOpenGitUrl(groupSummary.submission.gitUrl)}
+                                    className="text-purple-600 hover:text-purple-800 underline cursor-pointer font-medium truncate bg-transparent border-none p-0 text-left block"
+                                  >
+                                    {groupSummary.submission.gitUrl}
+                                  </button>
+                                  <div className="absolute bottom-full left-0 mb-2 px-3 py-1 text-xs text-white bg-gray-900 rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20">
+                                    Ouvrir le lien GitHub dans une nouvelle fenêtre
+                                    <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                                  </div>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="gap-1 text-purple-600 border-purple-300 hover:bg-purple-50"
+                                  onClick={() => handleOpenGitUrl(groupSummary.submission.gitUrl)}
+                                >
+                                  <Link className="h-4 w-4" />
+                                  Ouvrir
+                                </Button>
+                              </div>
+                            ) : groupSummary.submission.fileName && groupSummary.submission.fileExists !== false ? (
+                              <div className="flex items-center gap-2">
+                                <ArrowDownToLine className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                                <div className="group relative inline-block flex-1 min-w-0">
+                                  <button
+                                    onClick={() => handleDownloadSubmission(groupSummary.submission.id, groupSummary.submission.fileName)}
+                                    className="text-blue-600 hover:text-blue-800 underline cursor-pointer font-medium truncate bg-transparent border-none p-0 text-left block"
+                                  >
+                                    {groupSummary.submission.fileName}
+                                  </button>
+                                  <div className="absolute bottom-full left-0 mb-2 px-3 py-1 text-xs text-white bg-gray-900 rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20">
+                                    Télécharger le fichier
+                                    <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                                  </div>
+                                </div>
+                                {groupSummary.submission.fileSize && (
+                                  <span className="text-gray-500 text-sm flex-shrink-0">({formatFileSize(groupSummary.submission.fileSize)})</span>
+                                )}
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="gap-1 text-blue-600 border-blue-300 hover:bg-blue-50"
+                                  onClick={() => handleDownloadSubmission(groupSummary.submission.id, groupSummary.submission.fileName)}
+                                >
+                                  <Download className="h-4 w-4" />
+                                  Télécharger
+                                </Button>
+                              </div>
+                            ) : null}
+
                             {groupSummary.submission.similarityScore !== null && (
                               <div>
-                                <span className="font-medium">Score de similarité:</span> 
+                                <span className="font-medium">Score de similarité:</span>
                                 <span className={`ml-2 font-medium ${
                                   groupSummary.submission.similarityScore > 0.8 ? 'text-red-600' :
                                   groupSummary.submission.similarityScore > 0.6 ? 'text-orange-600' :
@@ -1218,7 +1477,7 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
                                 </span>
                               </div>
                             )}
-                            
+
                             {groupSummary.submission.validationDetails && (
                               <div>
                                 <span className="font-medium">Détails de validation:</span>
@@ -1257,7 +1516,7 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog de notation */}
+      {/* Dialog de notation - Gardé pour compatibilité avec le bouton "Noter" principal */}
       <Dialog open={isGradingDialogOpen} onOpenChange={setIsGradingDialogOpen}>
         <DialogContent className="sm:max-w-[1000px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -1266,7 +1525,7 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
               Attribuez les notes selon les critères définis pour ce livrable.
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedDeliverableForGrading && (
             <div className="space-y-6">
               {/* Informations du livrable */}
@@ -1299,7 +1558,7 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
                     <div className="text-center py-8">
                       <Star className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                       <p className="text-muted-foreground">Aucun critère de notation défini pour les livrables.</p>
-                      <Button 
+                      <Button
                         onClick={() => setIsCreateCriteriaDialogOpen(true)}
                         className="mt-4"
                       >
@@ -1334,21 +1593,10 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
                                     <p className="font-medium">{groupSummary.group.name}</p>
                                     {groupSummary.submission ? (
                                       <div className="flex items-center gap-2 mt-1">
-                                        {groupSummary.submission.isLate ? (
-                                          <Badge variant="destructive" className="text-xs">En retard</Badge>
-                                        ) : (
-                                          <Badge variant="default" className="text-xs">À temps</Badge>
-                                        )}
-                                        {groupSummary.submission.validationStatus === 'valid' ? (
-                                          <Badge variant="default" className="text-xs bg-green-100 text-green-800">Valide</Badge>
-                                        ) : groupSummary.submission.validationStatus === 'invalid' ? (
-                                          <Badge variant="destructive" className="text-xs">Invalide</Badge>
-                                        ) : (
-                                          <Badge variant="secondary" className="text-xs">En attente</Badge>
-                                        )}
+                                        {getSubmissionStatusBadge(groupSummary.submission, selectedDeliverableForGrading.deliverable, true)}
                                       </div>
                                     ) : (
-                                      <Badge variant="outline" className="text-xs">Non soumis</Badge>
+                                      <Badge variant="outline" className="border-gray-400 text-gray-600 bg-gray-50 text-xs">Non Soumis</Badge>
                                     )}
                                   </div>
                                 </div>
@@ -1359,7 +1607,7 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
                                       {(() => {
                                         const existingGrade = getExistingGrade(criterion.id, groupSummary.group.id);
                                         const gradeKey = `${criterion.id}-${groupSummary.group.id}`;
-                                        
+
                                         if (existingGrade) {
                                           return (
                                             <div className="flex items-center gap-2">
@@ -1374,7 +1622,7 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
                                             </div>
                                           );
                                         }
-                                        
+
                                         return (
                                           <div className="flex items-center gap-2">
                                             <Input
@@ -1421,7 +1669,7 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
                                       {groupSummary.group.students?.map((student: any) => {
                                         const existingGrade = getExistingGrade(criterion.id, groupSummary.group.id, student.id);
                                         const gradeKey = `${criterion.id}-${groupSummary.group.id}-${student.id}`;
-                                        
+
                                         if (existingGrade) {
                                           return (
                                             <div key={student.id} className="flex items-center gap-2">
@@ -1437,7 +1685,7 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
                                             </div>
                                           );
                                         }
-                                        
+
                                         return (
                                           <div key={student.id} className="flex items-center gap-2">
                                             <span className="text-sm w-24">{student.name}</span>
@@ -1499,10 +1747,10 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
               </Card>
             </div>
           )}
-          
+
           <div className="flex justify-end gap-2 pt-4">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setIsGradingDialogOpen(false)}
             >
               Fermer
