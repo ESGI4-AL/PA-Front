@@ -984,38 +984,56 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {getStatusBadge(deliverable)}
-                          {getLateSubmissionBadge(deliverable)}
-                          <Badge variant="outline">
-                            {deliverable.type === 'git' ? 'Git' : 'Archive'}
-                          </Badge>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
-                                <span className="sr-only">Menu</span>
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => openEditDialog(deliverable)}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Modifier
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setDeliverableToDelete(deliverable.id);
-                                  setIsDeleteDialogOpen(true);
-                                }}
-                                className="text-red-600 focus:text-red-500"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Supprimer
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                        <div className="flex flex-col items-end gap-2">
+                          <div className="flex items-center gap-2 mb-2">
+                            {getStatusBadge(deliverable)}
+                            {getLateSubmissionBadge(deliverable)}
+                            <Badge variant="outline">
+                              {deliverable.type === 'git' ? 'Git' : 'Archive'}
+                            </Badge>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                  <span className="sr-only">Menu</span>
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => openEditDialog(deliverable)}>
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  Modifier
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setDeliverableToDelete(deliverable.id);
+                                    setIsDeleteDialogOpen(true);
+                                  }}
+                                  className="text-red-600 focus:text-red-500"
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Supprimer
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+
+                          {/* Bouton d'analyse de similarité */}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-2 text-blue-600 border-blue-300 hover:bg-blue-50"
+                            onClick={() => handleAnalyzeSimilarity(deliverable.id)}
+                            disabled={analyzingId === deliverable.id}
+                          >
+                            {analyzingId === deliverable.id ? (
+                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+                            ) : (
+                              <BarChart3 className="h-4 w-4" />
+                            )}
+                            Analyser similarité
+                          </Button>
                         </div>
                       </div>
                     </CardHeader>
@@ -1112,20 +1130,6 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
                                                   <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
                                                 </div>
                                               </div>
-                                              <Button
-                                                size="sm"
-                                                variant="outline"
-                                                className="gap-1 text-orange-600 border-orange-300 hover:bg-orange-50 h-6 px-2 text-xs"
-                                                onClick={() => handleAnalyzeSimilarity(deliverable.id)}
-                                                disabled={analyzingId === deliverable.id}
-                                              >
-                                                {analyzingId === deliverable.id ? (
-                                                  <div className="h-3 w-3 animate-spin rounded-full border-2 border-orange-600 border-t-transparent" />
-                                                ) : (
-                                                  <BarChart3 className="h-3 w-3" />
-                                                )}
-                                                Analyser
-                                              </Button>
                                             </div>
                                           ) : null}
 
