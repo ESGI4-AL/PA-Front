@@ -117,3 +117,38 @@ export interface BackendDeliverableSummary {
   groupSummaries: BackendGroupSummary[];
   rules?: ValidationRule[];
 }
+
+export interface BackendFileComparison {
+  sourceFile: string;
+  targetComparisons: Array<{
+    fileName: string;
+    similarity: number;
+    method: string;
+    details: any;
+  }>;
+  bestMatch: {
+    fileName: string;
+    similarity: number;
+    method: string;
+    details: any;
+  } | null;
+  bestScore: number;
+}
+
+export interface BackendDetailedAnalysisResult {
+  archive1: string;
+  archive2: string;
+  globalSimilarity: number;
+  structuralSimilarity: number;
+  averageFileScore: number;
+  statistics: {
+    totalComparisons: number;
+    significantComparisons: number;
+    suspiciousFilesCount: number;
+    archive1Files: number;
+    archive2Files: number;
+  };
+  fileComparisons: BackendFileComparison[];
+  suspiciousFiles: BackendFileComparison[];
+  analyzedAt: string;
+}

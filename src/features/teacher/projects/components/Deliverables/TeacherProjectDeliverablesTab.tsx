@@ -95,6 +95,7 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
     analyzeSimilarity,
     getDeliverableSummary,
     getSubmissionContent,
+    analyzeArchivesDetailed,
     refetch
   } = useDeliverables(projectId || '');
 
@@ -1849,6 +1850,7 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
         deliverableName={selectedDeliverableForSimilarity?.name || ''}
         onAnalyze={handleAnalyzeSimilarityForDialog}
         getSubmissionContent={getSubmissionContent}
+        analyzeArchivesDetailed={analyzeArchivesDetailed}
       />
     </div>
   );

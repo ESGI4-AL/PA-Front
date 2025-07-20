@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { BackendDetailedAnalysisResult } from '../types/backend.types';
 
 interface ValidationRule {
   id?: string;
@@ -360,6 +361,33 @@ export const useDeliverables = (projectId: string) => {
     }
   };
 
+  const analyzeArchivesDetailed = async (
+    archive1Path: string,
+    archive2Path: string
+  ): Promise<BackendDetailedAnalysisResult> => {
+    try {
+      const response = await apiCall(`/deliverables/analyze-deep`, {
+        method: 'POST',
+        body: JSON.stringify({
+          archive1Path,
+          archive2Path
+        }),
+      });
+
+      if (response.status === 'success') {
+        toast.success('Analyse détaillée terminée');
+        return response.data;
+      }
+
+      throw new Error('Réponse API invalide');
+    } catch (error) {
+      console.error('Erreur lors de l\'analyse détaillée:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erreur lors de l\'analyse détaillée';
+      toast.error(errorMessage);
+      throw error;
+    }
+  };
+
   const sendDeadlineReminders = async () => {
     try {
       const response = await apiCall('/deliverables/send-reminders', {
@@ -397,7 +425,7 @@ export const useDeliverables = (projectId: string) => {
     getDeliverableSummary,
     getSubmissionContent,
     sendDeadlineReminders,
-
+    analyzeArchivesDetailed,
     refetch: fetchDeliverables,
   };
 };
