@@ -7,6 +7,10 @@ export interface Promotion {
   updatedAt: string;
 }
 
+export interface PromotionWithStudents extends Promotion {
+  students?: Student[];
+}
+
 export interface Student {
   id: string;
   firstName: string;
