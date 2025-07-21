@@ -208,6 +208,28 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
     }
   };
 
+  const shouldShowSimilarityButton = (deliverable: any) => {
+  // Don't show button for git deliverables
+  if (deliverable.type === 'git') {
+    return false;
+  }
+
+  // Get deliverable data
+  const deliverableData = deliverableGroups[deliverable.id];
+
+  if (!deliverableData || !deliverableData.groupSummaries) {
+    return false; // No data loaded yet
+  }
+
+  // Check if all groups have submitted (non-git submissions)
+  const allGroupsSubmitted = deliverableData.groupSummaries.every((groupSummary: any) => {
+    const submission = groupSummary.submission;
+    return submission && submission.fileName && submission.fileExists !== false;
+  });
+
+  return allGroupsSubmitted;
+};
+
   const handleAnalyzeSimilarity = async (deliverableId: string) => {
     // Trouver le livrable pour stocker les informations
     const deliverable = safeDeliverables.find(d => d.id === deliverableId);
@@ -1099,20 +1121,22 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
                           </div>
 
                           {/* Bouton d'analyse de similarité */}
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="gap-2 text-blue-600 border-blue-300 hover:bg-blue-50"
-                            onClick={() => handleAnalyzeSimilarity(deliverable.id)}
-                            disabled={analyzingId === deliverable.id}
-                          >
-                            {analyzingId === deliverable.id ? (
-                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
-                            ) : (
-                              <BarChart3 className="h-4 w-4" />
-                            )}
-                            Analyser similarité
-                          </Button>
+                          {shouldShowSimilarityButton(deliverable) && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-2 text-blue-600 border-blue-300 hover:bg-blue-50"
+                              onClick={() => handleAnalyzeSimilarity(deliverable.id)}
+                              disabled={analyzingId === deliverable.id}
+                            >
+                              {analyzingId === deliverable.id ? (
+                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+                              ) : (
+                                <BarChart3 className="h-4 w-4" />
+                              )}
+                              Analyser similarité
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </CardHeader>

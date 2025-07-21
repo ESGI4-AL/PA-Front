@@ -468,10 +468,6 @@ const SimilarityAnalysisDialog: React.FC<SimilarityAnalysisDialogProps> = ({
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <Badge variant="outline" className="text-xs">
-                    {comparison.method}
-                  </Badge>
-
                   <Badge
                     variant="outline"
                     className={`${getSimilarityBadgeColor(comparison.similarityScore)} font-medium`}
@@ -523,9 +519,6 @@ const SimilarityAnalysisDialog: React.FC<SimilarityAnalysisDialogProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          <Badge variant="outline">
-            {selectedComparison?.method}
-          </Badge>
           <Badge
             className={`${getSimilarityBadgeColor(selectedComparison?.similarityScore || 0)} font-medium`}
           >
@@ -756,9 +749,6 @@ const SimilarityAnalysisDialog: React.FC<SimilarityAnalysisDialogProps> = ({
               <DialogTitle className="flex items-center gap-2">
                 <BarChart3 className="h-5 w-5" />
                 Analyse de similarité - {deliverableName}
-                <Badge variant="outline" className="text-xs ml-2">
-                  ID: {deliverableId}
-                </Badge>
               </DialogTitle>
               {analysisResult && (
                 <p className="text-sm text-muted-foreground mt-1">
