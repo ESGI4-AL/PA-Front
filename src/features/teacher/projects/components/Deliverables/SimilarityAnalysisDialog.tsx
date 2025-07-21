@@ -347,9 +347,9 @@ const SimilarityAnalysisDialog: React.FC<SimilarityAnalysisDialogProps> = ({
   };
 
   const getSimilarityBadgeColor = (score: number) => {
-    if (score >= 0.8) return 'bg-red-100 text-red-800 border-red-300';
-    if (score >= 0.6) return 'bg-orange-100 text-orange-800 border-orange-300';
-    if (score >= 0.4) return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+    if (score >= 0.6) return 'bg-red-100 text-red-800 border-red-300';
+    if (score >= 0.4) return 'bg-orange-100 text-orange-800 border-orange-300';
+    if (score >= 0.2) return 'bg-yellow-100 text-yellow-800 border-yellow-300';
     return 'bg-green-100 text-green-800 border-green-300';
   };
 
@@ -422,7 +422,7 @@ const SimilarityAnalysisDialog: React.FC<SimilarityAnalysisDialogProps> = ({
               {((analysisResult?.statistics?.averageSimilarity || 0) * 100).toFixed(1)}%
             </div>
             <p className="text-xs text-muted-foreground">
-              Max: {((analysisResult?.statistics?.maxSimilarity || 0) * 100).toFixed(1)}%
+              Max: 100%
             </p>
           </CardContent>
         </Card>
@@ -718,7 +718,7 @@ const SimilarityAnalysisDialog: React.FC<SimilarityAnalysisDialogProps> = ({
                       {detailedAnalysisResult ? 'analyse détaillée' : selectedComparison?.method}
                     </span>
                   </div>
-                  {((selectedFileForComparison?.similarity ?? 0) >= 0.8 || selectedComparison?.isSuspicious) && (
+                  {((selectedFileForComparison?.similarity ?? 0) >= 0.6 || selectedComparison?.isSuspicious) && (
                     <div className="flex items-center gap-1 text-red-600">
                       <AlertTriangle className="h-3 w-3" />
                       <span className="text-xs font-medium">Suspect</span>
@@ -734,9 +734,9 @@ const SimilarityAnalysisDialog: React.FC<SimilarityAnalysisDialogProps> = ({
   );
 
   const getSimilarityColor = (score: number) => {
-    if (score >= 0.8) return 'text-red-600 bg-red-50 border-red-200';
-    if (score >= 0.6) return 'text-orange-600 bg-orange-50 border-orange-200';
-    if (score >= 0.4) return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+    if (score >= 0.6) return 'text-red-600 bg-red-50 border-red-200';
+    if (score >= 0.4) return 'text-orange-600 bg-orange-50 border-orange-200';
+    if (score >= 0.2) return 'text-yellow-600 bg-yellow-50 border-yellow-200';
     return 'text-green-600 bg-green-50 border-green-200';
   };
 
@@ -781,9 +781,6 @@ const SimilarityAnalysisDialog: React.FC<SimilarityAnalysisDialogProps> = ({
                 <h3 className="font-medium mb-1">Analyse en cours...</h3>
                 <p className="text-sm text-muted-foreground">
                   Comparaison des soumissions pour détecter les similarités
-                </p>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Deliverable: {deliverableId}
                 </p>
               </div>
             </div>

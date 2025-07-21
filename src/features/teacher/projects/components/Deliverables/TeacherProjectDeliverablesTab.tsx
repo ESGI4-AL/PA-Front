@@ -310,16 +310,12 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
     setSelectedDeliverableForSimilarity(null);
   };
 
-  // Wrapper pour adapter les types de la fonction analyzeSimilarity vers BackendSimilarityAnalysisResult
   const handleAnalyzeSimilarityForDialog = async (deliverableId: string): Promise<BackendSimilarityAnalysisResult> => {
     try {
-      // Utilise directement ton hook qui retourne déjà le bon format
       const result = await analyzeSimilarity(deliverableId);
 
-      // Si ton hook retourne le type du hook (SimilarityAnalysisResult), on l'adapte
       const deliverable = safeDeliverables.find(d => d.id === deliverableId);
 
-      // Adaptation simple vers le type Backend attendu par le dialog
       const adaptedResult: BackendSimilarityAnalysisResult = {
         deliverableId: result.deliverableId,
         deliverableName: deliverable?.name || result.deliverableName || 'Livrable inconnu',
@@ -344,32 +340,48 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
           isSuspicious: comp.isSuspicious,
           comparedAt: comp.comparedAt
         })),
-        suspiciousPairs: result.suspiciousPairs || [],
+        suspiciousPairs: result.suspiciousPairs?.length > 0
+          ? result.suspiciousPairs
+          : result.comparisons?.filter((comp: any) => comp.similarityScore >= 0.6) || [],
         similarityMatrix: result.similarityMatrix || {},
-        statistics: result.statistics || {
-          totalComparisons: result.comparisons?.length || 0,
-          successfulComparisons: result.comparisons?.length || 0,
-          errorCount: 0,
-          suspiciousCount: result.suspiciousPairs?.length || 0,
-          averageSimilarity: 0,
-          maxSimilarity: 0
-        },
-        threshold: result.threshold || 0.8,
-        submissions: result.submissions?.map((sub: any) => ({
-          id: sub.id,
-          groupId: sub.groupId,
-          groupName: sub.groupName,
-          fileName: sub.fileName,
-          fileSize: sub.fileSize,
-          filePath: sub.filePath,
-          gitUrl: sub.gitUrl,
-          submissionDate: sub.submissionDate,
-          isLate: sub.isLate,
-          validationStatus: sub.validationStatus as 'pending' | 'valid' | 'invalid', // CORRECTION du type
-          similarityScore: sub.similarityScore
-        })) || [],
-        processedAt: result.processedAt || new Date().toISOString()
-      };
+        statistics: (() => {
+          const comparisons = result.comparisons || [];
+
+          const similarities = comparisons.map(c => c.similarityScore).filter(s => s != null);
+
+          const averageSimilarity = similarities.length > 0
+            ? similarities.reduce((sum, score) => sum + score, 0) / similarities.length
+            : 0;
+          const maxSimilarity = similarities.length > 0
+            ? Math.max(...similarities)
+            : 0;
+
+          const suspiciousCount = comparisons.filter(c => c.similarityScore >= 0.6).length;
+            return {
+              totalComparisons: result.statistics?.totalComparisons || comparisons.length,
+              successfulComparisons: result.statistics?.successfulComparisons || comparisons.length,
+              errorCount: result.statistics?.errorCount || 0,
+              suspiciousCount: suspiciousCount,
+              averageSimilarity: averageSimilarity,
+              maxSimilarity: maxSimilarity
+            };
+          })(),
+          threshold: 0.6,
+          submissions: result.submissions?.map((sub: any) => ({
+            id: sub.id,
+            groupId: sub.groupId,
+            groupName: sub.groupName,
+            fileName: sub.fileName,
+            fileSize: sub.fileSize,
+            filePath: sub.filePath,
+            gitUrl: sub.gitUrl,
+            submissionDate: sub.submissionDate,
+            isLate: sub.isLate,
+            validationStatus: sub.validationStatus as 'pending' | 'valid' | 'invalid',
+            similarityScore: sub.similarityScore
+          })) || [],
+          processedAt: result.processedAt || new Date().toISOString()
+        };
 
       return adaptedResult;
     } catch (error) {
