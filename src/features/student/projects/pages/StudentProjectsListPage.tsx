@@ -282,7 +282,9 @@ const StudentProjectsListPage: React.FC = () => {
                   <TableCell>
                     <div className="flex items-center gap-1">
                       <Users className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">{project.myGroup.name}</span>
+                      <span className="font-medium">
+                        {project.myGroup ? project.myGroup.name : "Aucun groupe assigné"}
+                      </span>
                     </div>
                   </TableCell>
                   <TableCell>
