@@ -54,6 +54,9 @@ const SimilarityAnalysisDialog: React.FC<SimilarityAnalysisDialogProps> = ({
   const [selectedFile2Content, setSelectedFile2Content] = useState<string>('');
   const [loadingFileContent, setLoadingFileContent] = useState(false);
 
+  // Track the current deliverable ID to reset state when it changes
+  const [currentDeliverableId, setCurrentDeliverableId] = useState<string>('');
+
   const [detailedAnalysisResult, setDetailedAnalysisResult] = useState<BackendDetailedAnalysisResult | null>(null);
   const [isDetailedAnalyzing, setIsDetailedAnalyzing] = useState(false);
   const [selectedFileForComparison, setSelectedFileForComparison] = useState<{
@@ -62,20 +65,66 @@ const SimilarityAnalysisDialog: React.FC<SimilarityAnalysisDialogProps> = ({
     similarity: number;
   } | null>(null);
 
+  // Reset state when deliverable changes or dialog closes
+  useEffect(() => {
+    if (!isOpen) {
+      // Reset all state when dialog closes
+      setAnalysisResult(null);
+      setError(null);
+      setSelectedComparison(null);
+      setViewMode('overview');
+      setSelectedFile1Content('');
+      setSelectedFile2Content('');
+      setDetailedAnalysisResult(null);
+      setSelectedFileForComparison(null);
+      setCurrentDeliverableId('');
+      setIsAnalyzing(false);
+      setLoadingFileContent(false);
+      setIsDetailedAnalyzing(false);
+    }
+  }, [isOpen]);
+
+  // Reset state when deliverable ID changes
+  useEffect(() => {
+    if (deliverableId && deliverableId !== currentDeliverableId) {
+      console.log('Deliverable changed from', currentDeliverableId, 'to', deliverableId);
+
+      // Reset all state for new deliverable
+      setAnalysisResult(null);
+      setError(null);
+      setSelectedComparison(null);
+      setViewMode('overview');
+      setSelectedFile1Content('');
+      setSelectedFile2Content('');
+      setDetailedAnalysisResult(null);
+      setSelectedFileForComparison(null);
+      setCurrentDeliverableId(deliverableId);
+      setIsAnalyzing(false);
+      setLoadingFileContent(false);
+      setIsDetailedAnalyzing(false);
+    }
+  }, [deliverableId, currentDeliverableId]);
+
   // Lancer l'analyse automatiquement à l'ouverture
   useEffect(() => {
-    if (isOpen && deliverableId && !analysisResult && !isAnalyzing) {
+    if (isOpen && deliverableId && !analysisResult && !isAnalyzing && deliverableId === currentDeliverableId) {
+      console.log('Auto-launching analysis for deliverable:', deliverableId);
       handleAnalyze();
     }
-  }, [isOpen, deliverableId]);
+  }, [isOpen, deliverableId, analysisResult, isAnalyzing, currentDeliverableId]);
 
   const handleAnalyze = async () => {
     try {
+      console.log('Starting analysis for deliverable:', deliverableId);
       setIsAnalyzing(true);
       setError(null);
+      setAnalysisResult(null); // Clear previous results
+
       const result = await onAnalyze(deliverableId);
+      console.log('Analysis completed for deliverable:', deliverableId, result);
       setAnalysisResult(result);
     } catch (err) {
+      console.error('Analysis failed for deliverable:', deliverableId, err);
       setError(err instanceof Error ? err.message : 'Erreur lors de l\'analyse');
     } finally {
       setIsAnalyzing(false);
@@ -83,86 +132,86 @@ const SimilarityAnalysisDialog: React.FC<SimilarityAnalysisDialogProps> = ({
   };
 
   const handleComparisonSelect = async (comparison: any) => {
-  setSelectedComparison(comparison);
-  setViewMode('comparison');
-  setLoadingFileContent(true);
-  setSelectedFileForComparison(null);
-  setDetailedAnalysisResult(null);
+    setSelectedComparison(comparison);
+    setViewMode('comparison');
+    setLoadingFileContent(true);
+    setSelectedFileForComparison(null);
+    setDetailedAnalysisResult(null);
 
-  try {
-    // AJOUT DE LOGS POUR DÉBOGUER
-    console.log('Comparaison sélectionnée:', {
-      method: comparison.method,
-      type1: comparison.details?.type1,
-      type2: comparison.details?.type2,
-      isArchive: comparison.details?.type1 === 'archive' && comparison.details?.type2 === 'archive'
-    });
-
-    // Vérifier si c'est une comparaison d'archives
-    const isArchiveComparison = comparison.details?.type1 === 'archive' && comparison.details?.type2 === 'archive';
-
-    if (isArchiveComparison && analyzeArchivesDetailed) {
-      console.log('Lancement analyse détaillée des archives...');
-
-      // Récupérer les chemins des soumissions
-      const submission1 = analysisResult?.submissions.find(s => s.id === comparison.submission1Id);
-      const submission2 = analysisResult?.submissions.find(s => s.id === comparison.submission2Id);
-
-      console.log('Chemins des archives:', {
-        archive1: submission1?.filePath,
-        archive2: submission2?.filePath
+    try {
+      // AJOUT DE LOGS POUR DÉBOGUER
+      console.log('Comparaison sélectionnée:', {
+        method: comparison.method,
+        type1: comparison.details?.type1,
+        type2: comparison.details?.type2,
+        isArchive: comparison.details?.type1 === 'archive' && comparison.details?.type2 === 'archive'
       });
 
-      if (submission1?.filePath && submission2?.filePath) {
-        setIsDetailedAnalyzing(true);
+      // Vérifier si c'est une comparaison d'archives
+      const isArchiveComparison = comparison.details?.type1 === 'archive' && comparison.details?.type2 === 'archive';
 
-        try {
-          const detailedResult = await analyzeArchivesDetailed(submission1.filePath, submission2.filePath);
-          console.log('Analyse détaillée terminée:', detailedResult);
-          setDetailedAnalysisResult(detailedResult);
+      if (isArchiveComparison && analyzeArchivesDetailed) {
+        console.log('Lancement analyse détaillée des archives...');
 
-          // Sélectionner automatiquement le fichier le plus suspect pour l'affichage
-          if (detailedResult.suspiciousFiles.length > 0) {
-            const mostSuspicious = detailedResult.suspiciousFiles[0];
-            if (mostSuspicious.bestMatch) {
-              setSelectedFileForComparison({
-                sourceFile: mostSuspicious.sourceFile,
-                targetFile: mostSuspicious.bestMatch.fileName,
-                similarity: mostSuspicious.bestScore
-              });
+        // Récupérer les chemins des soumissions
+        const submission1 = analysisResult?.submissions.find(s => s.id === comparison.submission1Id);
+        const submission2 = analysisResult?.submissions.find(s => s.id === comparison.submission2Id);
 
-              // Charger le contenu des fichiers les plus suspects
-              await loadArchiveFileContents(
-                submission1.filePath,
-                submission2.filePath,
-                mostSuspicious.sourceFile,
-                mostSuspicious.bestMatch.fileName
-              );
+        console.log('Chemins des archives:', {
+          archive1: submission1?.filePath,
+          archive2: submission2?.filePath
+        });
+
+        if (submission1?.filePath && submission2?.filePath) {
+          setIsDetailedAnalyzing(true);
+
+          try {
+            const detailedResult = await analyzeArchivesDetailed(submission1.filePath, submission2.filePath);
+            console.log('Analyse détaillée terminée:', detailedResult);
+            setDetailedAnalysisResult(detailedResult);
+
+            // Sélectionner automatiquement le fichier le plus suspect pour l'affichage
+            if (detailedResult.suspiciousFiles.length > 0) {
+              const mostSuspicious = detailedResult.suspiciousFiles[0];
+              if (mostSuspicious.bestMatch) {
+                setSelectedFileForComparison({
+                  sourceFile: mostSuspicious.sourceFile,
+                  targetFile: mostSuspicious.bestMatch.fileName,
+                  similarity: mostSuspicious.bestScore
+                });
+
+                // Charger le contenu des fichiers les plus suspects
+                await loadArchiveFileContents(
+                  submission1.filePath,
+                  submission2.filePath,
+                  mostSuspicious.sourceFile,
+                  mostSuspicious.bestMatch.fileName
+                );
+              }
             }
+          } catch (detailedError) {
+            console.error('Erreur analyse détaillée:', detailedError);
+            // Fallback vers l'ancienne méthode
+            await loadRegularFileContents(comparison);
+          } finally {
+            setIsDetailedAnalyzing(false);
           }
-        } catch (detailedError) {
-          console.error('Erreur analyse détaillée:', detailedError);
-          // Fallback vers l'ancienne méthode
+        } else {
+          console.log('Chemins d\'archives manquants, fallback vers analyse normale');
           await loadRegularFileContents(comparison);
-        } finally {
-          setIsDetailedAnalyzing(false);
         }
       } else {
-        console.log('Chemins d\'archives manquants, fallback vers analyse normale');
+        console.log('Analyse normale (non-archive)');
         await loadRegularFileContents(comparison);
       }
-    } else {
-      console.log('Analyse normale (non-archive)');
-      await loadRegularFileContents(comparison);
+    } catch (error) {
+      console.error('Erreur lors du chargement:', error);
+      setSelectedFile1Content('Erreur lors du chargement du fichier');
+      setSelectedFile2Content('Erreur lors du chargement du fichier');
+    } finally {
+      setLoadingFileContent(false);
     }
-  } catch (error) {
-    console.error('Erreur lors du chargement:', error);
-    setSelectedFile1Content('Erreur lors du chargement du fichier');
-    setSelectedFile2Content('Erreur lors du chargement du fichier');
-  } finally {
-    setLoadingFileContent(false);
-  }
-};
+  };
 
   const loadArchiveFileContents = async (
     archive1Path: string,
@@ -457,12 +506,12 @@ const SimilarityAnalysisDialog: React.FC<SimilarityAnalysisDialogProps> = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
             onClick={() => setViewMode('overview')}
             className="gap-2"
           >
-            ← Retour à la vue d'ensemble
+            ← Retour
           </Button>
 
           <div className="flex items-center gap-2">
@@ -568,30 +617,6 @@ const SimilarityAnalysisDialog: React.FC<SimilarityAnalysisDialogProps> = ({
                   </div>
                 </div>
               )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Détails des algorithmes */}
-      {selectedComparison?.algorithms && selectedComparison.algorithms.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Détails des algorithmes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {selectedComparison.algorithms.map((algo: any, index: number) => (
-                <div key={index} className="text-sm">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-medium capitalize">{algo.method}</span>
-                    <span className="font-mono text-xs">
-                      {((algo.score || 0) * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                  <Progress value={(algo.score || 0) * 100} className="h-2" />
-                </div>
-              ))}
             </div>
           </CardContent>
         </Card>
@@ -731,6 +756,9 @@ const SimilarityAnalysisDialog: React.FC<SimilarityAnalysisDialogProps> = ({
               <DialogTitle className="flex items-center gap-2">
                 <BarChart3 className="h-5 w-5" />
                 Analyse de similarité - {deliverableName}
+                <Badge variant="outline" className="text-xs ml-2">
+                  ID: {deliverableId}
+                </Badge>
               </DialogTitle>
               {analysisResult && (
                 <p className="text-sm text-muted-foreground mt-1">
@@ -764,6 +792,9 @@ const SimilarityAnalysisDialog: React.FC<SimilarityAnalysisDialogProps> = ({
                 <p className="text-sm text-muted-foreground">
                   Comparaison des soumissions pour détecter les similarités
                 </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Deliverable: {deliverableId}
+                </p>
               </div>
             </div>
           ) : error ? (
@@ -772,6 +803,9 @@ const SimilarityAnalysisDialog: React.FC<SimilarityAnalysisDialogProps> = ({
               <div className="text-center">
                 <h3 className="font-medium mb-1 text-red-700">Erreur d'analyse</h3>
                 <p className="text-sm text-muted-foreground">{error}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Deliverable: {deliverableId}
+                </p>
                 <Button
                   onClick={handleAnalyze}
                   className="mt-4 gap-2"
