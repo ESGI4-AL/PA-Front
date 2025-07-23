@@ -11,6 +11,7 @@ import StudentProjectGroupsTab from "../components/Groups/StudentProjectGroupsTa
 import StudentProjectDeliverablesTab from "../components/Deliverables/StudentProjectDeliverablesTab";
 import StudentProjectPresentationsTab from "../components/Presentations/StudentProjectPresentationsTab";
 import StudentProjectEvaluationTab from "../components/Evaluations/StudentProjectEvaluationTab";
+import StudentProjectRepportsTab from "../components/Repports/StudentProjectRepportsTab";
 
 
 const StudentProjecTabPage: React.FC = () => {
@@ -93,7 +94,7 @@ const StudentProjecTabPage: React.FC = () => {
               <Slash />
             </BreadcrumbSeparator>
             <BreadcrumbItem>
-              <BreadcrumbLink href="/student/projects">Mes Projets</BreadcrumbLink>
+              <BreadcrumbLink href="/student/projects/my-projects">Mes Projets</BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator>
               <Slash />
@@ -131,7 +132,7 @@ const StudentProjecTabPage: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="reports">
-          <StudentProjectGroupsTab />
+          <StudentProjectRepportsTab />
         </TabsContent>
 
         <TabsContent value="presentations">
