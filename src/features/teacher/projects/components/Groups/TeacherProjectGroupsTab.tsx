@@ -239,7 +239,7 @@ const TeacherProjectGroupsTab: React.FC = () => {
                 className="gap-2"
               >
                 <Shuffle className="h-4 w-4" />
-                Assigner automatiquement ({safeUnassignedStudents.length})
+                Assigner automatiquement
               </Button>
             </>
           )}
@@ -549,7 +549,7 @@ const TeacherProjectGroupsTab: React.FC = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sans groupe</CardTitle>
+            <CardTitle className="text-sm font-medium">Élèves sans groupe</CardTitle>
             <UserPlus className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -562,12 +562,12 @@ const TeacherProjectGroupsTab: React.FC = () => {
       {}
       {project && (
         <Alert>
-          <Settings className="h-4 w-4" />
+          <Settings className="!h-5 !w-5" style={{ width: '24px', height: '24px' }} />
           <AlertDescription>
-            <strong>Configuration du projet :</strong>
+            <span className="text-black text-base font-semibold">Configurations du projet</span>
             Taille des groupes : {project.minGroupSize}-{project.maxGroupSize} étudiants |
-            Formation : {project.groupFormationMethod === 'manual' ? 'Manuelle' :
-                       project.groupFormationMethod === 'free' ? 'Libre' : 'Automatique'}
+            Formation : {project.groupFormationMethod === 'manual' ? 'Manuelle (par le professeur)' :
+                        project.groupFormationMethod === 'free' ? 'Libre' : 'Automatique'}
             {project.groupFormationDeadline && (
               <> | Échéance : {new Date(project.groupFormationDeadline).toLocaleDateString('fr-FR')}</>
             )}

@@ -52,45 +52,44 @@ interface AssignRemainingResponse {
 
 const extractArrayFromResponse = (response: any, dataType: string): any[] => {
   console.log(`Extraction des données ${dataType}:`, response);
-  
- 
+
+
   if (Array.isArray(response)) {
     console.log(`${dataType} déjà un tableau:`, response.length, 'éléments');
     return response;
   }
-  
 
   if (!response) {
     console.log(`⚠️ ${dataType} null/undefined`);
     return [];
   }
-  
+
 
   if (typeof response === 'object') {
-    
+
     if (response.data && Array.isArray(response.data)) {
       console.log(`${dataType} trouvé dans response.data:`, response.data.length, 'éléments');
       return response.data;
     }
-    
+
     if (response.data && typeof response.data === 'object') {
       // Pour les étudiants
       if (dataType === 'students' && Array.isArray(response.data.students)) {
         console.log(`${dataType} trouvé dans response.data.students:`, response.data.students.length, 'éléments');
         return response.data.students;
       }
-      
+
       if (dataType === 'groups' && Array.isArray(response.data.groups)) {
         console.log(`${dataType} trouvé dans response.data.groups:`, response.data.groups.length, 'éléments');
         return response.data.groups;
       }
-      
+
       if (dataType === 'project' && response.data.project) {
         console.log(`${dataType} trouvé dans response.data.project`);
         return response.data.project;
       }
     }
-    
+
     const possibleKeys = ['items', 'results', 'content', dataType];
     for (const key of possibleKeys) {
       if (Array.isArray(response[key])) {
@@ -98,19 +97,19 @@ const extractArrayFromResponse = (response: any, dataType: string): any[] => {
         return response[key];
       }
     }
-    
+
     if (response.error || response.message) {
       console.error(`Erreur dans la réponse ${dataType}:`, response.error || response.message);
       return [];
     }
   }
-  
+
   console.warn(`Format de réponse ${dataType} non reconnu:`, response);
   console.warn(`Type:`, typeof response);
   if (response && typeof response === 'object') {
     console.warn(`Clés disponibles:`, Object.keys(response));
   }
-  
+
   return [];
 };
 
@@ -135,16 +134,16 @@ export const useGroups = (projectId: string) => {
       const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
         headers: getHeaders()
       });
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Erreur HTTP projet:', response.status, errorText);
         throw new Error(`Erreur ${response.status}: ${response.statusText}`);
       }
-      
+
       const result = await response.json();
       console.log('Réponse projet brute:', result);
-      
+
       let projectData;
       if (result.data) {
         projectData = result.data;
@@ -153,10 +152,10 @@ export const useGroups = (projectId: string) => {
       } else {
         throw new Error('Format de réponse projet invalide');
       }
-      
+
       console.log('Projet récupéré:', projectData);
       setProject(projectData);
-      
+
       return projectData;
     } catch (error) {
       console.error('Erreur fetchProject:', error);
@@ -170,19 +169,19 @@ export const useGroups = (projectId: string) => {
       const response = await fetch(`${API_BASE_URL}/projects/${projectId}/groups`, {
         headers: getHeaders()
       });
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Erreur HTTP groupes:', response.status, errorText);
         throw new Error(`Erreur ${response.status}: ${response.statusText}`);
       }
-      
+
       const result = await response.json();
       console.log('Réponse groupes brute:', result);
-      
+
       const groupsData = extractArrayFromResponse(result, 'groups');
       console.log('Groupes récupérés:', groupsData.length, groupsData);
-      
+
       setGroups(groupsData);
       return groupsData;
     } catch (error) {
@@ -195,24 +194,24 @@ export const useGroups = (projectId: string) => {
   const fetchAllStudents = useCallback(async (promotionId: string) => {
     try {
       console.log('Récupération des étudiants pour la promotion:', promotionId);
-      
+
       if (!promotionId || promotionId === 'undefined' || promotionId === 'null') {
         throw new Error('ID de promotion invalide');
       }
-      
+
       const url = `${API_BASE_URL}/projects/promotions/${promotionId}/students`;
       console.log('URL étudiants:', url);
-      
+
       const response = await fetch(url, {
         headers: getHeaders()
       });
-      
+
       console.log('Statut réponse étudiants:', response.status, response.statusText);
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Erreur HTTP étudiants:', response.status, errorText);
-        
+
         if (response.status === 404) {
           throw new Error('Promotion non trouvée ou aucun étudiant dans cette promotion');
         } else if (response.status === 403) {
@@ -221,30 +220,30 @@ export const useGroups = (projectId: string) => {
           throw new Error(`Erreur ${response.status}: ${response.statusText}`);
         }
       }
-      
+
       const result = await response.json();
       console.log('Réponse étudiants brute:', result);
-      
+
       const studentsData = extractArrayFromResponse(result, 'students');
       console.log('Étudiants récupérés:', studentsData.length, studentsData);
-      
+
       const validStudents = studentsData.filter(student => {
-        const isValid = student && 
-          typeof student === 'object' && 
-          student.id && 
-          student.firstName && 
-          student.lastName && 
+        const isValid = student &&
+          typeof student === 'object' &&
+          student.id &&
+          student.firstName &&
+          student.lastName &&
           student.email;
-        
+
         if (!isValid) {
           console.warn('Étudiant invalide détecté:', student);
         }
-        
+
         return isValid;
       });
-      
+
       console.log('Étudiants valides:', validStudents.length, 'sur', studentsData.length);
-      
+
       setAllStudents(validStudents);
       return validStudents;
     } catch (error) {
@@ -258,7 +257,7 @@ export const useGroups = (projectId: string) => {
     console.log('Calcul des étudiants non assignés...');
     console.log('Tous les étudiants:', allStudents?.length || 0);
     console.log('Groupes:', groups?.length || 0);
-    
+
     if (!Array.isArray(allStudents) || allStudents.length === 0) {
       console.warn('Aucun étudiant à traiter');
       setUnassignedStudents([]);
@@ -282,14 +281,14 @@ export const useGroups = (projectId: string) => {
         });
       }
     });
-    
-    const unassigned = allStudents.filter(student => 
+
+    const unassigned = allStudents.filter(student =>
       student && student.id && !assignedStudentIds.has(student.id)
     );
-    
+
     console.log('Étudiants assignés:', assignedStudentIds.size);
     console.log('Étudiants non assignés:', unassigned.length, unassigned);
-    
+
     setUnassignedStudents(unassigned);
     return unassigned;
   }, []);
@@ -298,26 +297,26 @@ export const useGroups = (projectId: string) => {
     try {
       setLoading(true);
       setError(null);
-      
+
       console.log('=== DÉBUT DU CHARGEMENT DES DONNÉES ===');
       console.log('Project ID:', projectId);
-      
+
       console.log('Étape 1: Récupération du projet...');
       const projectData = await fetchProject();
-      
+
       if (!projectData) {
         throw new Error('Impossible de récupérer les données du projet');
       }
-      
+
       console.log('Projet récupéré, promotionId:', projectData.promotionId);
-      
+
       console.log('Étape 2: Récupération des groupes...');
       const groupsData = await fetchGroups();
-      
+
       if (projectData.promotionId) {
         console.log('Étape 3: Récupération des étudiants...');
         const studentsData = await fetchAllStudents(projectData.promotionId);
-        
+
         console.log('Étape 4: Calcul des non assignés...');
         calculateUnassignedStudents(studentsData, groupsData);
       } else {
@@ -325,9 +324,9 @@ export const useGroups = (projectId: string) => {
         setAllStudents([]);
         setUnassignedStudents([]);
       }
-      
+
       console.log('=== CHARGEMENT TERMINÉ AVEC SUCCÈS ===');
-      
+
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors du chargement des données';
       console.error('=== ERREUR LORS DU CHARGEMENT ===', errorMessage);
@@ -344,61 +343,47 @@ export const useGroups = (projectId: string) => {
       console.log('Données reçues:', groupData);
       console.log('Project ID:', projectId);
       console.log('URL:', `${API_BASE_URL}/projects/${projectId}/groups`);
-      
+
       const response = await fetch(`${API_BASE_URL}/projects/${projectId}/groups`, {
         method: 'POST',
         headers: getHeaders(),
         body: JSON.stringify(groupData)
       });
-      
+
       console.log('Statut réponse:', response.status, response.statusText);
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Réponse d\'erreur:', errorText);
-        
+
         let errorData;
         try {
           errorData = JSON.parse(errorText);
         } catch {}
-        
+
         throw new Error(errorData?.message || 'Erreur lors de la création du groupe');
       }
-      
+
       const result = await response.json();
       console.log('Réponse succès:', result);
-      
+
       const newGroup = result.data || result;
       console.log('Nouveau groupe créé:', newGroup);
-      
 
-      setGroups(prev => {
-        console.log('Mise à jour groupes, avant:', prev.length);
-        const updated = [...prev, newGroup];
-        console.log('Mise à jour groupes, après:', updated.length);
-        return updated;
-      });
-      
-      if (groupData.memberIds && groupData.memberIds.length > 0) {
-        console.log('Mise à jour étudiants non assignés');
-        setUnassignedStudents(prev => {
-          const filtered = Array.isArray(prev) ? prev.filter(s => !groupData.memberIds!.includes(s.id)) : [];
-          console.log('Étudiants non assignés après création:', filtered.length);
-          return filtered;
-        });
-      }
-      
+      console.log('Rechargement des données pour actualiser l\'affichage...');
+      await fetchAllData();
+
       toast.success('Groupe créé avec succès');
       console.log('=== FIN CRÉATION GROUPE (SUCCÈS) ===');
       return newGroup;
-      
+
     } catch (error) {
       console.error('=== ERREUR CRÉATION GROUPE ===', error);
       const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la création du groupe';
       toast.error(errorMessage);
       throw error;
     }
-  }, [projectId, API_BASE_URL]);
+  }, [projectId, API_BASE_URL, fetchAllData]);
 
   const updateGroup = useCallback(async (groupId: string, updateData: UpdateGroupData) => {
     try {
@@ -406,49 +391,49 @@ export const useGroups = (projectId: string) => {
       console.log('Groupe ID:', groupId);
       console.log('Données de modification:', updateData);
       console.log('URL:', `${API_BASE_URL}/groups/${groupId}`);
-      
+
       const response = await fetch(`${API_BASE_URL}/groups/${groupId}`, {
         method: 'PUT',
         headers: getHeaders(),
         body: JSON.stringify(updateData)
       });
-      
+
       console.log('Statut modification:', response.status, response.statusText);
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Erreur modification:', errorText);
-        
+
         let errorData;
         try {
           errorData = JSON.parse(errorText);
         } catch {}
-        
+
         throw new Error(errorData?.message || 'Erreur lors de la modification du groupe');
       }
-      
+
       const result = await response.json();
       console.log('Réponse modification:', result);
-      
+
       const updatedGroup = result.data || result;
       console.log('Groupe modifié:', updatedGroup);
-      
+
       setGroups(prev => {
-        const updated = Array.isArray(prev) ? prev.map(group => 
+        const updated = Array.isArray(prev) ? prev.map(group =>
           group.id === groupId ? updatedGroup : group
         ) : [];
         console.log('Groupes après modification:', updated.length);
         return updated;
       });
-      
+
       console.log('Recalcul des étudiants non assignés après modification');
       const updatedGroups = groups.map(g => g.id === groupId ? updatedGroup : g);
       calculateUnassignedStudents(allStudents, updatedGroups);
-      
+
       toast.success('Groupe modifié avec succès');
       console.log('=== FIN MODIFICATION GROUPE (SUCCÈS) ===');
       return updatedGroup;
-      
+
     } catch (error) {
       console.error('=== ERREUR MODIFICATION GROUPE ===', error);
       const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la modification du groupe';
@@ -460,17 +445,17 @@ export const useGroups = (projectId: string) => {
   const deleteGroup = useCallback(async (groupId: string) => {
     try {
       console.log('=== DÉBUT SUPPRESSION GROUPE ===', groupId);
-      
+
       const response = await fetch(`${API_BASE_URL}/groups/${groupId}`, {
         method: 'DELETE',
         headers: getHeaders()
       });
-      
+
       console.log('Statut suppression:', response.status, response.statusText);
-      
+
       if (!response.ok) {
         let errorMessage = `Erreur HTTP ${response.status}: ${response.statusText}`;
-        
+
         try {
           const contentType = response.headers.get('content-type');
           if (contentType && contentType.includes('application/json')) {
@@ -486,163 +471,113 @@ export const useGroups = (projectId: string) => {
             errorMessage = 'Non autorisé - vérifiez votre connexion';
           }
         }
-        
+
         throw new Error(errorMessage);
       }
-      
-      const groupToDelete = groups.find(g => g.id === groupId);
-      console.log('Groupe à supprimer:', groupToDelete);
-      
-      setGroups(prev => {
-        const filtered = Array.isArray(prev) ? prev.filter(g => g.id !== groupId) : [];
-        console.log('Groupes après suppression:', filtered.length);
-        return filtered;
-      });
-      
-      if (groupToDelete?.members && Array.isArray(groupToDelete.members)) {
-        console.log('Remise des membres dans non assignés:', groupToDelete.members.length);
-        setUnassignedStudents(prev => 
-          Array.isArray(prev) ? [...prev, ...groupToDelete.members] : groupToDelete.members
-        );
-      }
-      
+
+      // Recharger toutes les données pour avoir les informations à jour
+      console.log('Rechargement des données après suppression du groupe...');
+      await fetchAllData();
+
       toast.success('Groupe supprimé avec succès');
       console.log('=== FIN SUPPRESSION GROUPE (SUCCÈS) ===');
-      
+
     } catch (error) {
       console.error('=== ERREUR SUPPRESSION GROUPE ===', error);
       const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la suppression du groupe';
       toast.error(errorMessage);
       throw error;
     }
-  }, [groups, API_BASE_URL]);
+  }, [API_BASE_URL, fetchAllData]);
 
   const addMemberToGroup = useCallback(async (groupId: string, memberId: string) => {
     try {
       console.log('=== AJOUT MEMBRE AU GROUPE ===');
       console.log('Groupe ID:', groupId);
       console.log('Membre ID:', memberId);
-      
+
       const response = await fetch(`${API_BASE_URL}/groups/${groupId}/members/${memberId}`, {
         method: 'POST',
         headers: getHeaders()
       });
-      
+
       console.log('Statut ajout membre:', response.status, response.statusText);
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Erreur ajout membre:', errorText);
-        
+
         let errorData;
         try {
           errorData = JSON.parse(errorText);
         } catch {}
-        
+
         throw new Error(errorData?.message || 'Erreur lors de l\'ajout du membre');
       }
-      
-      const studentToAdd = Array.isArray(unassignedStudents) ? 
-        unassignedStudents.find(s => s.id === memberId) : null;
-      
-      console.log('Étudiant à ajouter:', studentToAdd);
-      
-      if (studentToAdd) {
-        setGroups(prev => {
-          const updated = Array.isArray(prev) ? prev.map(group => 
-            group.id === groupId 
-              ? { ...group, members: [...(group.members || []), studentToAdd] }
-              : group
-          ) : [];
-          console.log('Groupes après ajout membre');
-          return updated;
-        });
-        
-        setUnassignedStudents(prev => {
-          const filtered = Array.isArray(prev) ? prev.filter(s => s.id !== memberId) : [];
-          console.log('Non assignés après ajout membre:', filtered.length);
-          return filtered;
-        });
-      }
-      
+
+      // Recharger toutes les données pour avoir les informations à jour
+      console.log('Rechargement des données après ajout membre...');
+      await fetchAllData();
+
       toast.success('Étudiant ajouté au groupe');
       console.log('=== FIN AJOUT MEMBRE (SUCCÈS) ===');
-      
+
     } catch (error) {
       console.error('=== ERREUR AJOUT MEMBRE ===', error);
       const errorMessage = error instanceof Error ? error.message : 'Erreur lors de l\'ajout du membre';
       toast.error(errorMessage);
       throw error;
     }
-  }, [unassignedStudents, API_BASE_URL]);
+  }, [API_BASE_URL, fetchAllData]);
 
   const removeMemberFromGroup = useCallback(async (groupId: string, memberId: string) => {
     try {
       console.log('=== RETRAIT MEMBRE DU GROUPE ===');
       console.log('Groupe ID:', groupId);
       console.log('Membre ID:', memberId);
-      
+
       const response = await fetch(`${API_BASE_URL}/groups/${groupId}/members/${memberId}`, {
         method: 'DELETE',
         headers: getHeaders()
       });
-      
+
       console.log('Statut retrait membre:', response.status, response.statusText);
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Erreur retrait membre:', errorText);
-        
+
         let errorData;
         try {
           errorData = JSON.parse(errorText);
         } catch {}
-        
+
         throw new Error(errorData?.message || 'Erreur lors du retrait du membre');
       }
-      
-      let removedStudent: Student | undefined;
-      setGroups(prev => {
-        const updated = Array.isArray(prev) ? prev.map(group => {
-          if (group.id === groupId && Array.isArray(group.members)) {
-            removedStudent = group.members.find(m => m.id === memberId);
-            return { ...group, members: group.members.filter(m => m.id !== memberId) };
-          }
-          return group;
-        }) : [];
-        console.log('Groupes après retrait membre');
-        return updated;
-      });
-      
-      if (removedStudent) {
-        console.log('Étudiant retiré:', removedStudent);
-        setUnassignedStudents(prev => {
-          const updated = Array.isArray(prev) ? [...prev, removedStudent!] : [removedStudent!];
-          console.log('Non assignés après retrait membre:', updated.length);
-          return updated;
-        });
-      }
-      
+
+      console.log('Rechargement des données après retrait membre...');
+      await fetchAllData();
+
       toast.success('Étudiant retiré du groupe');
       console.log('=== FIN RETRAIT MEMBRE (SUCCÈS) ===');
-      
+
     } catch (error) {
       console.error('=== ERREUR RETRAIT MEMBRE ===', error);
       const errorMessage = error instanceof Error ? error.message : 'Erreur lors du retrait du membre';
       toast.error(errorMessage);
       throw error;
     }
-  }, [API_BASE_URL]);
+  }, [API_BASE_URL, fetchAllData]);
 
   const assignRemainingStudents = useCallback(async () => {
     try {
       console.log('=== ASSIGNATION AUTOMATIQUE ===');
-      
+
       const response = await fetch(`${API_BASE_URL}/projects/${projectId}/groups/assign-remaining`, {
         method: 'POST',
         headers: getHeaders()
       });
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         let errorData;
@@ -651,12 +586,12 @@ export const useGroups = (projectId: string) => {
         } catch {}
         throw new Error(errorData?.message || 'Erreur lors de l\'assignation automatique');
       }
-      
+
       const result: AssignRemainingResponse = await response.json();
       console.log('Résultat assignation:', result);
-      
+
       await fetchAllData();
-      
+
       toast.success(result.message || 'Étudiants assignés automatiquement');
       console.log('=== FIN ASSIGNATION AUTOMATIQUE (SUCCÈS) ===');
       return result;
@@ -676,7 +611,7 @@ export const useGroups = (projectId: string) => {
   useEffect(() => {
     console.log('=== MONTAGE DU HOOK useGroups ===');
     console.log('Project ID:', projectId);
-    
+
     if (projectId && projectId !== 'undefined') {
       fetchAllData();
     } else {
@@ -690,7 +625,7 @@ export const useGroups = (projectId: string) => {
     totalStudents: Array.isArray(allStudents) ? allStudents.length : 0,
     totalGroups: Array.isArray(groups) ? groups.length : 0,
     unassignedCount: Array.isArray(unassignedStudents) ? unassignedStudents.length : 0,
-    averageGroupSize: Array.isArray(groups) && groups.length > 0 ? 
+    averageGroupSize: Array.isArray(groups) && groups.length > 0 ?
       groups.reduce((sum, group) => sum + (Array.isArray(group.members) ? group.members.length : 0), 0) / groups.length : 0
   };
 
@@ -707,7 +642,7 @@ export const useGroups = (projectId: string) => {
     loading,
     error,
     stats,
-    
+
     createGroup,
     updateGroup,
     deleteGroup,
