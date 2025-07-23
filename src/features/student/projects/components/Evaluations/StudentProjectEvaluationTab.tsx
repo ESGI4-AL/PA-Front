@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { 
-  Calculator, 
-  Star, 
+import {
+  Calculator,
+  Star,
   Eye,
   EyeOff,
   Award,
@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Badge } from '@/shared/components/ui/badge';
+import { Button } from '@/shared/components/ui/button';
 import { Alert, AlertDescription } from '@/shared/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import { useStudentEvaluations } from '../../hooks/useStudentEvaluations';
@@ -60,7 +61,7 @@ interface StudentGradeData {
 
 const StudentProjectEvaluationTab: React.FC = () => {
   const { id: projectId } = useParams<{ id: string }>();
-  
+
   const {
     loading,
     error,
@@ -91,13 +92,13 @@ const StudentProjectEvaluationTab: React.FC = () => {
 
   const calculateWeightedAverage = (gradesList: Grade[]) => {
     if (gradesList.length === 0) return null;
-    
+
     const publishedGrades = gradesList.filter(g => g.isPublished);
     if (publishedGrades.length === 0) return null;
-    
+
     const totalWeight = publishedGrades.reduce((sum, grade) => sum + grade.criteria.weight, 0);
     const weightedSum = publishedGrades.reduce((sum, grade) => sum + (grade.score * grade.criteria.weight), 0);
-    
+
     return totalWeight > 0 ? weightedSum / totalWeight : null;
   };
 
@@ -110,7 +111,7 @@ const StudentProjectEvaluationTab: React.FC = () => {
       ...grades.presentation.group,
       ...grades.presentation.individual
     ];
-    
+
     return calculateWeightedAverage(allGrades);
   };
 
@@ -142,6 +143,47 @@ const StudentProjectEvaluationTab: React.FC = () => {
     );
   }
 
+  const isInGroup = !!studentInfo?.group;
+
+  // Si l'étudiant n'est pas dans un groupe, afficher le message d'invitation
+  if (!isInGroup) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Mes évaluations</h2>
+          <p className="text-muted-foreground">
+            Consultez vos notes et commentaires pour le projet
+          </p>
+        </div>
+
+        <Card>
+          <CardContent className="p-12">
+            <div className="text-center">
+              <Users className="h-24 w-24 text-muted-foreground mx-auto mb-6" />
+              <h3 className="text-2xl font-semibold mb-4">Vous devez rejoindre un groupe</h3>
+              <Alert className="mb-6 max-w-md mx-auto">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Pour accéder aux évaluations de ce projet, vous devez d'abord faire partie d'un groupe. Rejoignez un groupe existant ou créez le vôtre dans l'onglet Groupes.
+                </AlertDescription>
+              </Alert>
+              <Button
+                onClick={() => {
+                  const event = new CustomEvent('changeTab', { detail: 'group' });
+                  window.dispatchEvent(event);
+                }}
+                className="gap-2"
+              >
+                <Users className="h-4 w-4" />
+                Rejoindre un groupe
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const overallAverage = calculateOverallAverage();
   const stats = getStatistics();
 
@@ -154,7 +196,7 @@ const StudentProjectEvaluationTab: React.FC = () => {
           Consultez vos notes et commentaires pour le projet
         </p>
       </div>
-      
+
       {}
       <Card>
         <CardHeader>
@@ -203,7 +245,7 @@ const StudentProjectEvaluationTab: React.FC = () => {
               const typeGrades = [...grades[type as keyof StudentGradeData].group, ...grades[type as keyof StudentGradeData].individual];
               const publishedGrades = typeGrades.filter(g => g.isPublished);
               const average = calculateWeightedAverage(typeGrades);
-              
+
               return (
                 <div key={type} className="text-center p-3 border rounded-lg">
                   <div className="flex items-center justify-center gap-2 mb-2">
@@ -219,7 +261,7 @@ const StudentProjectEvaluationTab: React.FC = () => {
                 </div>
               );
             })}
-            
+
             <div className="text-center p-3 border rounded-lg">
               <div className="flex items-center justify-center gap-2 mb-2">
                 <TrendingUp className="h-4 w-4" />
@@ -265,7 +307,7 @@ const StudentProjectEvaluationTab: React.FC = () => {
                         <Users className="h-4 w-4" />
                         Évaluation de groupe
                       </h4>
-                      
+
                       {grades[evaluationType as keyof StudentGradeData].group.map((grade) => (
                         <div key={grade.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
                           <div className="flex items-center justify-between mb-2">
@@ -275,7 +317,7 @@ const StudentProjectEvaluationTab: React.FC = () => {
                                 <p className="text-sm text-muted-foreground">{grade.criteria.description}</p>
                               )}
                             </div>
-                            
+
                             <div className="flex items-center gap-3">
                               <Badge variant="outline" className="text-xs">
                                 Coeff: {grade.criteria.weight}
@@ -302,7 +344,7 @@ const StudentProjectEvaluationTab: React.FC = () => {
                               )}
                             </div>
                           </div>
-                          
+
                           {grade.isPublished && grade.comment && (
                             <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded">
                               <div className="flex items-start gap-2">
@@ -318,7 +360,7 @@ const StudentProjectEvaluationTab: React.FC = () => {
                       ))}
                     </div>
                   )}
-                  
+
                   {}
                   {grades[evaluationType as keyof StudentGradeData].individual.length > 0 && (
                     <div className="space-y-3">
@@ -326,7 +368,7 @@ const StudentProjectEvaluationTab: React.FC = () => {
                         <Award className="h-4 w-4" />
                         Évaluation individuelle
                       </h4>
-                      
+
                       {grades[evaluationType as keyof StudentGradeData].individual.map((grade) => (
                         <div key={grade.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
                           <div className="flex items-center justify-between mb-2">
@@ -336,7 +378,7 @@ const StudentProjectEvaluationTab: React.FC = () => {
                                 <p className="text-sm text-muted-foreground">{grade.criteria.description}</p>
                               )}
                             </div>
-                            
+
                             <div className="flex items-center gap-3">
                               <Badge variant="outline" className="text-xs">
                                 Coeff: {grade.criteria.weight}
@@ -363,7 +405,7 @@ const StudentProjectEvaluationTab: React.FC = () => {
                               )}
                             </div>
                           </div>
-                          
+
                           {grade.isPublished && grade.comment && (
                             <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded">
                               <div className="flex items-start gap-2">
@@ -379,9 +421,9 @@ const StudentProjectEvaluationTab: React.FC = () => {
                       ))}
                     </div>
                   )}
-                  
+
                   {}
-                  {grades[evaluationType as keyof StudentGradeData].group.length === 0 && 
+                  {grades[evaluationType as keyof StudentGradeData].group.length === 0 &&
                    grades[evaluationType as keyof StudentGradeData].individual.length === 0 && (
                     <div className="text-center py-12">
                       <Calculator className="h-12 w-12 text-muted-foreground mx-auto mb-3" />

@@ -168,7 +168,7 @@ const TeacherProjectGroupsTab: React.FC = () => {
   const handleRefreshData = async () => {
     try {
       await refreshData();
-      toast.success('Données actualisées avec succès');
+      toast.success('Groupes actualisés avec succès');
     } catch (error) {
       toast.error('Erreur lors de l\'actualisation des données');
     }

@@ -54,6 +54,18 @@ const StudentProjecTabPage: React.FC = () => {
   }, [id, fetchProjectById, navigate]);
 
   useEffect(() => {
+    const handleTabChange = (event: CustomEvent) => {
+      setActiveTab(event.detail);
+    };
+
+    window.addEventListener('changeTab', handleTabChange as EventListener);
+
+    return () => {
+      window.removeEventListener('changeTab', handleTabChange as EventListener);
+    };
+  }, []);
+
+  useEffect(() => {
     return () => {
       clearError();
     };

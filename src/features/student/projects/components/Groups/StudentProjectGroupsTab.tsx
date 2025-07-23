@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Users, Plus, UserPlus, Settings, AlertCircle, Info, Calendar, Lock, UserMinus, RefreshCcw } from 'lucide-react';
+import { Users, Plus, UserPlus, Settings, AlertCircle, Info, Calendar, Lock, UserMinus, RefreshCcw, TriangleAlert } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
@@ -181,7 +181,7 @@ const StudentProjectGroupsTab: React.FC = () => {
             onClick={async () => {
               try {
                 await refreshData();
-                toast.success('Données actualisées avec succès');
+                toast.success('Groupes actualisés avec succès');
               } catch (error) {
                 toast.error('Erreur lors de l\'actualisation des données');
               }
@@ -402,7 +402,7 @@ const StudentProjectGroupsTab: React.FC = () => {
       {/* Deadline Alert */}
       {project && project.groupFormationDeadline && new Date() > new Date(project.groupFormationDeadline) && (
         <Alert variant="destructive">
-          <Calendar className="h-4 w-4" />
+          <TriangleAlert className="h-4 w-4" />
           <AlertDescription>
             La date limite de formation des groupes est passée ({new Date(project.groupFormationDeadline).toLocaleDateString('fr-FR')}).
             Vous ne pouvez plus modifier les groupes.
