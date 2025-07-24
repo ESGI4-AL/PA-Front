@@ -77,7 +77,6 @@ const PromotionsPage: React.FC = () => {
       const data = await getPromotions({
         search: searchTerm,
         page: currentPage,
-        limit: 10,
       });
       setPromotions(data.promotions);
       setTotalPages(data.totalPages);

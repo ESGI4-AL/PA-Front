@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 .gradient {
-  background: linear-gradient(90deg, #fa3747 0%, #ffccbb 100%);
+  background: linear-gradient(90deg, #fa3747 0%, #fca78b 100%);
 }
 
 .wave {

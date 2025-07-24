@@ -17,7 +17,8 @@ import {
   Download,
   Trash2,
   RefreshCw,
-  Dot
+  Dot,
+  Users
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
@@ -35,6 +36,7 @@ import {
 } from '@/shared/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { useStudentDeliverables } from '../../hooks/useStudentDeliverables';
+import { useStudentGroups } from '../../hooks/useStudentGroups';
 import { StudentDeliverableView } from '@/domains/project/models/deliverableModels';
 import StudentSubmissionDialog from './StudentSubmissionDialog';
 
@@ -51,6 +53,11 @@ const StudentProjectDeliverablesTab: React.FC = () => {
     downloadSubmission,
     deleteSubmissionById
   } = useStudentDeliverables(projectId || '');
+
+  const {
+    userGroup,
+    loading: groupLoading
+  } = useStudentGroups(projectId || '');
 
   // États pour le dialog de soumission
   const [selectedDeliverable, setSelectedDeliverable] = useState<StudentDeliverableView | null>(null);
@@ -278,10 +285,53 @@ const StudentProjectDeliverablesTab: React.FC = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  if (loading) {
+  if (loading || groupLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
+
+  const isInGroup = !!userGroup;
+
+  // Si l'étudiant n'est pas dans un groupe, afficher le message d'invitation
+  if (!isInGroup) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Mes livrables</h2>
+            <p className="text-muted-foreground">
+              Consultez et soumettez vos livrables pour ce projet
+            </p>
+          </div>
+        </div>
+
+        <Card>
+          <CardContent className="p-12">
+            <div className="text-center">
+              <Users className="h-24 w-24 text-muted-foreground mx-auto mb-6" />
+              <h3 className="text-2xl font-semibold mb-4">Vous devez rejoindre un groupe</h3>
+              <Alert className="mb-6 max-w-md mx-auto">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Pour accéder aux livrables de ce projet, vous devez d'abord faire partie d'un groupe. Rejoignez un groupe existant ou créez le vôtre dans l'onglet Groupes.
+                </AlertDescription>
+              </Alert>
+              <Button
+                onClick={() => {
+                  const event = new CustomEvent('changeTab', { detail: 'group' });
+                  window.dispatchEvent(event);
+                }}
+                className="gap-2"
+              >
+                <Users className="h-4 w-4" />
+                Rejoindre un groupe
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }

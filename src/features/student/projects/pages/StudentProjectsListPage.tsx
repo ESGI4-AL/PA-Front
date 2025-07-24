@@ -48,7 +48,7 @@ import {
   Calendar,
 } from 'lucide-react';
 
-import { ProjectStatus } from '@/domains/project/models/projectModels';
+import { ProjectStatus, GroupFormationMethod } from '@/domains/project/models/projectModels';
 import { useStudentProjects } from '../hooks/useStudentProjects';
 
 const StudentProjectsListPage: React.FC = () => {
@@ -70,7 +70,6 @@ const StudentProjectsListPage: React.FC = () => {
       fetchMyProjects({
         search: searchTerm,
         page: currentPage,
-        limit: 10
       });
     }, 500);
 
@@ -82,7 +81,6 @@ const StudentProjectsListPage: React.FC = () => {
       await fetchMyProjects({
         search: searchTerm,
         page: currentPage,
-        limit: 10
       });
       clearError();
     } catch (err) {
@@ -110,6 +108,16 @@ const StudentProjectsListPage: React.FC = () => {
         {config.label}
       </Badge>
     );
+  };
+
+  const getGroupFormationMethodLabel = (method: GroupFormationMethod) => {
+    const methodConfig = {
+      [GroupFormationMethod.MANUAL]: 'Attribution manuelle',
+      [GroupFormationMethod.RANDOM]: 'Attribution aléatoire',
+      [GroupFormationMethod.FREE]: 'Formation libre',
+    };
+
+    return methodConfig[method] || '—';
   };
 
   const handleViewProject = (id: string) => {
@@ -239,6 +247,7 @@ const StudentProjectsListPage: React.FC = () => {
               <TableHead>Promotion</TableHead>
               <TableHead>Groupes</TableHead>
               <TableHead>Statut</TableHead>
+              <TableHead>Formation groupes</TableHead>
               <TableHead>Taille groupes</TableHead>
               <TableHead>Prochaine échéance</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -282,11 +291,18 @@ const StudentProjectsListPage: React.FC = () => {
                   <TableCell>
                     <div className="flex items-center gap-1">
                       <Users className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">{project.myGroup.name}</span>
+                      <span className="font-medium">
+                        {project.myGroup ? project.myGroup.name : "Aucun groupe assigné"}
+                      </span>
                     </div>
                   </TableCell>
                   <TableCell>
                     {getStatusBadge(project.status)}
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm">
+                      {getGroupFormationMethodLabel(project.groupFormationMethod)}
+                    </div>
                   </TableCell>
                   <TableCell>
                     {formatGroupSize(project)} étudiant{project.maxGroupSize > 1 ? 's' : ''}

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Users, Plus, UserPlus, Settings, AlertCircle, Shuffle, Download, Edit, Trash2 } from 'lucide-react';
+import { Users, Plus, UserPlus, Settings, AlertCircle, Shuffle, Download, Edit, Trash2, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
@@ -24,7 +24,7 @@ const Checkbox = ({ id, checked, onCheckedChange, ...props }: any) => (
 
 const TeacherProjectGroupsTab: React.FC = () => {
   const { id: projectId } = useParams<{ id: string }>();
-  
+
   const {
     groups,
     unassignedStudents,
@@ -35,19 +35,20 @@ const TeacherProjectGroupsTab: React.FC = () => {
     createGroup,
     updateGroup,
     deleteGroup,
-    addMemberToGroup, 
+    addMemberToGroup,
     removeMemberFromGroup,
-    assignRemainingStudents
+    assignRemainingStudents,
+    refreshData
   } = useGroups(projectId || '');
-  
+
   const [isCreateGroupDialogOpen, setIsCreateGroupDialogOpen] = useState(false);
-  const [isEditGroupDialogOpen, setIsEditGroupDialogOpen] = useState(false); 
+  const [isEditGroupDialogOpen, setIsEditGroupDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false); 
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [groupToDelete, setGroupToDelete] = useState<string | null>(null);
-  const [groupToEdit, setGroupToEdit] = useState<any>(null); 
-  const [studentToAssign, setStudentToAssign] = useState<any>(null); 
-  
+  const [groupToEdit, setGroupToEdit] = useState<any>(null);
+  const [studentToAssign, setStudentToAssign] = useState<any>(null);
+
 
   const [groupForm, setGroupForm] = useState({
     name: '',
@@ -68,23 +69,23 @@ const TeacherProjectGroupsTab: React.FC = () => {
     );
   }
 
- 
+
   const handleCreateGroup = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log('=== DÉBUT handleCreateGroup ===');
     console.log('Données du formulaire:', groupForm);
-    
+
     try {
       const newGroup = await createGroup(groupForm);
       console.log('Groupe créé dans handleCreateGroup, fermeture dialog');
-      
+
       setIsCreateGroupDialogOpen(false);
       setGroupForm({ name: '', memberIds: [] });
-      
+
       console.log('Dialog fermé et formulaire reset');
     } catch (error) {
       console.error('Erreur dans handleCreateGroup:', error);
-      
+
     }
   };
 
@@ -103,21 +104,21 @@ const TeacherProjectGroupsTab: React.FC = () => {
     console.log('=== DÉBUT handleEditGroup ===');
     console.log('Groupe à modifier:', groupToEdit);
     console.log('Nouvelles données:', groupForm);
-    
+
     try {
       await updateGroup(groupToEdit.id, {
         name: groupForm.name,
         memberIds: groupForm.memberIds
       });
-      
+
       setIsEditGroupDialogOpen(false);
       setGroupToEdit(null);
       setGroupForm({ name: '', memberIds: [] });
-      
+
       console.log('Modification terminée avec succès');
     } catch (error) {
       console.error('Erreur dans handleEditGroup:', error);
-    
+
     }
   };
 
@@ -134,7 +135,7 @@ const TeacherProjectGroupsTab: React.FC = () => {
         setIsAssignDialogOpen(false);
         setStudentToAssign(null);
       } catch (error) {
-       
+
       }
     }
   };
@@ -151,7 +152,7 @@ const TeacherProjectGroupsTab: React.FC = () => {
         setIsDeleteDialogOpen(false);
         setGroupToDelete(null);
       } catch (error) {
-       
+
       }
     }
   };
@@ -160,20 +161,29 @@ const TeacherProjectGroupsTab: React.FC = () => {
     try {
       await assignRemainingStudents();
     } catch (error) {
-   
+
+    }
+  };
+
+  const handleRefreshData = async () => {
+    try {
+      await refreshData();
+      toast.success('Groupes actualisés avec succès');
+    } catch (error) {
+      toast.error('Erreur lors de l\'actualisation des données');
     }
   };
 
   const handleMemberSelection = (studentId: string, isSelected: boolean) => {
     console.log('👥 Sélection membre:', studentId, isSelected ? 'ajouté' : 'retiré');
-    
+
     setGroupForm(prev => {
-      const newMemberIds = isSelected 
+      const newMemberIds = isSelected
         ? [...prev.memberIds, studentId]
         : prev.memberIds.filter(id => id !== studentId);
-      
+
       console.log('👥 Membres sélectionnés:', newMemberIds);
-      
+
       return {
         ...prev,
         memberIds: newMemberIds
@@ -210,17 +220,26 @@ const TeacherProjectGroupsTab: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={handleRefreshData}
+            disabled={loading}
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Actualiser
+          </Button>
           {safeGroups.length > 0 && (
             <>
-            
-              <Button 
-                variant="outline" 
+
+              <Button
+                variant="outline"
                 onClick={handleAssignRemainingStudents}
                 disabled={safeUnassignedStudents.length === 0}
                 className="gap-2"
               >
                 <Shuffle className="h-4 w-4" />
-                Assigner automatiquement ({safeUnassignedStudents.length})
+                Assigner automatiquement
               </Button>
             </>
           )}
@@ -249,7 +268,7 @@ const TeacherProjectGroupsTab: React.FC = () => {
                     required
                   />
                 </div>
-                
+
                 {safeUnassignedStudents.length > 0 && (
                   <div className="space-y-2">
                     <Label>Étudiants à ajouter (optionnel)</Label>
@@ -259,7 +278,7 @@ const TeacherProjectGroupsTab: React.FC = () => {
                           <Checkbox
                             id={`student-${student.id}`}
                             checked={groupForm.memberIds.includes(student.id)}
-                            onCheckedChange={(checked) => 
+                            onCheckedChange={(checked) =>
                               handleMemberSelection(student.id, checked as boolean)
                             }
                           />
@@ -276,7 +295,7 @@ const TeacherProjectGroupsTab: React.FC = () => {
                     )}
                   </div>
                 )}
-                
+
                 {project && (
                   <Alert>
                     <Settings className="h-4 w-4" />
@@ -287,9 +306,9 @@ const TeacherProjectGroupsTab: React.FC = () => {
                 )}
 
                 <div className="flex justify-end gap-2 pt-4">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
+                  <Button
+                    type="button"
+                    variant="outline"
                     onClick={() => {
                       setIsCreateGroupDialogOpen(false);
                       setGroupForm({ name: '', memberIds: [] });
@@ -327,7 +346,7 @@ const TeacherProjectGroupsTab: React.FC = () => {
                 required
               />
             </div>
-            
+
             {}
             {groupToEdit && Array.isArray(groupToEdit.members) && groupToEdit.members.length > 0 && (
               <div className="space-y-2">
@@ -378,7 +397,7 @@ const TeacherProjectGroupsTab: React.FC = () => {
                 </div>
               </div>
             )}
-            
+
             {}
             {safeUnassignedStudents.length > 0 && (
               <div className="space-y-2">
@@ -389,7 +408,7 @@ const TeacherProjectGroupsTab: React.FC = () => {
                       <Checkbox
                         id={`edit-student-${student.id}`}
                         checked={groupForm.memberIds.includes(student.id)}
-                        onCheckedChange={(checked) => 
+                        onCheckedChange={(checked) =>
                           handleMemberSelection(student.id, checked as boolean)
                         }
                       />
@@ -403,9 +422,9 @@ const TeacherProjectGroupsTab: React.FC = () => {
             )}
 
             <div className="flex justify-end gap-2 pt-4">
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => {
                   setIsEditGroupDialogOpen(false);
                   setGroupToEdit(null);
@@ -432,8 +451,8 @@ const TeacherProjectGroupsTab: React.FC = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-2 pt-4">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 setIsDeleteDialogOpen(false);
                 setGroupToDelete(null);
@@ -441,8 +460,8 @@ const TeacherProjectGroupsTab: React.FC = () => {
             >
               Annuler
             </Button>
-            <Button 
-              variant="destructive" 
+            <Button
+              variant="destructive"
               onClick={handleDeleteGroup}
               disabled={loading}
             >
@@ -470,7 +489,7 @@ const TeacherProjectGroupsTab: React.FC = () => {
               safeGroups.map((group) => {
                 const safeMembers = Array.isArray(group.members) ? group.members : [];
                 const canAddMember = project ? safeMembers.length < project.maxGroupSize : true;
-                
+
                 return (
                   <div key={group.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex-1">
@@ -493,8 +512,8 @@ const TeacherProjectGroupsTab: React.FC = () => {
             )}
           </div>
           <div className="flex justify-end gap-2 pt-4">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 setIsAssignDialogOpen(false);
                 setStudentToAssign(null);
@@ -507,7 +526,7 @@ const TeacherProjectGroupsTab: React.FC = () => {
       </Dialog>
 
       {}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total étudiants</CardTitle>
@@ -517,7 +536,7 @@ const TeacherProjectGroupsTab: React.FC = () => {
             <div className="text-2xl font-bold">{safeStats.totalStudents}</div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Groupes créés</CardTitle>
@@ -527,37 +546,28 @@ const TeacherProjectGroupsTab: React.FC = () => {
             <div className="text-2xl font-bold">{safeStats.totalGroups}</div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sans groupe</CardTitle>
+            <CardTitle className="text-sm font-medium">Élèves sans groupe</CardTitle>
             <UserPlus className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-orange-600">{safeStats.unassignedCount}</div>
           </CardContent>
         </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Taille moyenne</CardTitle>
-            <Settings className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{safeStats.averageGroupSize.toFixed(1)}</div>
-          </CardContent>
-        </Card>
+
       </div>
 
       {}
       {project && (
         <Alert>
-          <Settings className="h-4 w-4" />
+          <Settings className="!h-5 !w-5" style={{ width: '24px', height: '24px' }} />
           <AlertDescription>
-            <strong>Configuration du projet :</strong> 
-            Taille des groupes : {project.minGroupSize}-{project.maxGroupSize} étudiants | 
-            Formation : {project.groupFormationMethod === 'manual' ? 'Manuelle' : 
-                       project.groupFormationMethod === 'free' ? 'Libre' : 'Automatique'}
+            <span className="text-black text-base font-semibold">Configurations du projet</span>
+            Taille des groupes : {project.minGroupSize}-{project.maxGroupSize} étudiants |
+            Formation : {project.groupFormationMethod === 'manual' ? 'Manuelle (par le professeur)' :
+                        project.groupFormationMethod === 'free' ? 'Libre' : 'Automatique'}
             {project.groupFormationDeadline && (
               <> | Échéance : {new Date(project.groupFormationDeadline).toLocaleDateString('fr-FR')}</>
             )}
@@ -596,11 +606,11 @@ const TeacherProjectGroupsTab: React.FC = () => {
                     <p className="text-sm text-muted-foreground">
                       La promotion est vide. Ajoutez des étudiants à la promotion pour pouvoir créer des groupes.
                     </p>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => {
-                        
+
                         window.location.href = `/admin/promotions/${project?.promotionId || ''}/students`;
                       }}
                     >
@@ -625,8 +635,8 @@ const TeacherProjectGroupsTab: React.FC = () => {
                         {student.email}
                       </p>
                     </div>
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       variant="outline"
                       onClick={() => openAssignDialog(student)}
                     >
@@ -667,9 +677,9 @@ const TeacherProjectGroupsTab: React.FC = () => {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {safeGroups.map((group) => {
-                   
+
                     const safeMembers = Array.isArray(group.members) ? group.members : [];
-                    
+
                     return (
                       <Card key={group.id} className="border-2 hover:shadow-md transition-shadow">
                         <CardHeader className="pb-3">
@@ -702,9 +712,9 @@ const TeacherProjectGroupsTab: React.FC = () => {
                                       </p>
                                     </div>
                                   </div>
-                                  <Button 
-                                    size="sm" 
-                                    variant="ghost" 
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
                                     className="text-red-600 hover:text-red-700 hover:bg-red-50"
                                     onClick={() => removeMemberFromGroup(group.id, member.id)}
                                   >
@@ -714,7 +724,7 @@ const TeacherProjectGroupsTab: React.FC = () => {
                               ))
                             )}
                           </div>
-                          
+
                           {}
                           {project && (
                             <div className="mb-4">
@@ -736,20 +746,20 @@ const TeacherProjectGroupsTab: React.FC = () => {
                               )}
                             </div>
                           )}
-                          
+
                           <div className="flex gap-2">
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
+                            <Button
+                              size="sm"
+                              variant="outline"
                               className="flex-1"
                               onClick={() => openEditDialog(group)}
                             >
                               <Edit className="h-3 w-3 mr-1" />
                               Modifier
                             </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
+                            <Button
+                              size="sm"
+                              variant="outline"
                               className="text-red-600 hover:text-red-700 hover:bg-red-50"
                               onClick={() => openDeleteDialog(group.id)}
                             >

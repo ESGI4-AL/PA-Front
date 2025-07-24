@@ -1,4 +1,4 @@
-import { ChevronFirst, ChevronLast } from 'lucide-react';
+import { ChevronFirst, ChevronLast, Loader2 } from 'lucide-react';
 import logo from '@/assets/images/logo.svg';
 import { useSidebar } from '../hooks/useSidebar';
 import SidebarItemComponent from '../components/SidebarItemComponent';
@@ -9,6 +9,8 @@ import { Link } from 'react-router-dom';
 interface SidebarProperties {
   role: 'teacher' | 'student';
 }
+
+import { useState } from 'react';
 
 function SidebarContent({ role }: SidebarProperties) {
   const {
@@ -22,9 +24,15 @@ function SidebarContent({ role }: SidebarProperties) {
   const { expanded, toggleExpanded } = useSidebarContext();
   const { logout } = useAuth();
 
-  const handleLogout = (e: React.MouseEvent) => {
+
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async (e: React.MouseEvent) => {
     e.preventDefault();
+    setIsLoggingOut(true);
+    await new Promise(resolve => setTimeout(resolve, 2000)); // 2 seconds delay
     logout();
+    setIsLoggingOut(false);
   };
 
   const isProfileActive = location.pathname === `/${role}/profile`;
@@ -71,17 +79,16 @@ function SidebarContent({ role }: SidebarProperties) {
 
         <SidebarItemComponent
           icon="LogOut"
-          text="Se déconnecter"
+          text={isLoggingOut ? "Déconnexion..." : "Se déconnecter"}
           to="/logout"
           active={false}
-          onClick={handleLogout}
+          onClick={isLoggingOut ? undefined : handleLogout}
         />
       </ul>
 
       <div className="border-t border-white/20 flex p-3">
         {user ? (
-          <Link
-            to={`/${role}/profile`}
+          <div
             className={`
               flex items-center w-full rounded-lg p-2 -m-2
               transition-all duration-200 group relative
@@ -89,7 +96,10 @@ function SidebarContent({ role }: SidebarProperties) {
                 ? "bg-white/20 text-white"
                 : "hover:bg-white/15 text-white/90 hover:text-white"
               }
+              cursor-default
             `}
+            tabIndex={-1}
+            aria-disabled="true"
           >
             <img
               src={`https://ui-avatars.com/api/?background=ffccbb&color=fa3747&bold=true&name=${encodeURIComponent(getUserInitials())}`}
@@ -152,7 +162,7 @@ function SidebarContent({ role }: SidebarProperties) {
                 Voir le profil
               </div>
             )}
-          </Link>
+          </div>
         ) : (
           // Alternative si les données de l'utilisateur ne sont pas disponibles
           <div className="flex items-center w-full">
@@ -171,6 +181,14 @@ function SidebarContent({ role }: SidebarProperties) {
           </div>
         )}
       </div>
+      {isLoggingOut && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center gradient">
+          <div className="flex flex-col items-center">
+            <Loader2 className="animate-spin text-white" size={48} />
+            <span className="mt-4 text-white text-lg font-semibold">Déconnexion...</span>
+          </div>
+        </div>
+      )}
     </nav>
   );
 }

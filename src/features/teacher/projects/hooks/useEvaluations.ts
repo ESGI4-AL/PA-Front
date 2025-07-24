@@ -255,7 +255,6 @@ export const useEvaluations = (projectId: string) => {
       console.log('Résultat création:', result);
 
       if (result.status === 'success') {
-        toast.success('Critère créé avec succès');
         console.log('Critère créé, rechargement de la liste...');
         await loadEvaluationCriteria();
         return result.data;
@@ -357,7 +356,6 @@ export const useEvaluations = (projectId: string) => {
       });
 
       if (result.status === 'success') {
-        toast.success('Note attribuée avec succès');
         await loadProjectGrades();
         return result.data;
       } else {

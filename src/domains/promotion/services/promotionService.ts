@@ -1,4 +1,4 @@
-import { Promotion, CreatePromotionRequest, UpdatePromotionRequest, Student, StudentFilters } from '../models/promotionModels';
+import { Promotion, PromotionWithStudents, CreatePromotionRequest, UpdatePromotionRequest, Student, StudentFilters } from '../models/promotionModels';
 import { getAuthToken } from '../../user/services/authService';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
@@ -224,6 +224,21 @@ export const removeStudentFromPromotion = async (promotionId: string, studentId:
     }
   } catch (error) {
     console.error('Erreur lors de la suppression d\'un étudiant de la promotion:', error);
+    throw error;
+  }
+};
+
+export const getMyPromotion = async (): Promise<PromotionWithStudents> => {
+  try {
+    const response = await fetch(`${API_URL}/promotions/my-promotion`, {
+      headers: {
+        ...getAuthHeaders()
+      }
+    });
+
+    return handleApiResponse(response);
+  } catch (error) {
+    console.error('Erreur lors de la récupération de ma promotion:', error);
     throw error;
   }
 };

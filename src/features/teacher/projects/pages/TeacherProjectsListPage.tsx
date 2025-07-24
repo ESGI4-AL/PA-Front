@@ -80,7 +80,6 @@ const TeacherProjectsListPage: React.FC = () => {
       const data = await getAllProjects({
         search: searchTerm,
         page: currentPage,
-        limit: 10,
       });
       setProjects(data.projects);
       setTotalPages(data.totalPages);

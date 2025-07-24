@@ -15,7 +15,7 @@ export const usePresentations = (projectId: string) => {
 
     setLoading(true);
     setError(null);
-    
+
     try {
       const data = await presentationService.getPresentationSchedule(projectId);
       setSchedules(data);
@@ -37,7 +37,7 @@ export const usePresentations = (projectId: string) => {
   }) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const data = await presentationService.createPresentationSchedule(projectId, scheduleData);
       toast.success('Planning de soutenances créé avec succès');
@@ -56,7 +56,7 @@ export const usePresentations = (projectId: string) => {
   const reorderSchedule = async (groupOrder: string[]) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const data = await presentationService.reorderPresentationSchedule(projectId, groupOrder);
       setSchedules(data);
@@ -81,15 +81,15 @@ export const usePresentations = (projectId: string) => {
       toast.error('ID du projet manquant');
       return;
     }
-    
+
     if (schedules.length === 0) {
       toast.error('Aucun planning à modifier');
       return;
     }
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
       const data = await presentationService.updatePresentationSchedule(projectId, scheduleData);
       toast.success('Planning de soutenances modifié avec succès');
@@ -110,15 +110,15 @@ export const usePresentations = (projectId: string) => {
       toast.error('ID du projet manquant');
       return;
     }
-    
+
     if (schedules.length === 0) {
       toast.error('Aucun planning à supprimer');
       return;
     }
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
       await presentationService.deletePresentationSchedule(projectId);
       setSchedules([]);
@@ -138,20 +138,20 @@ export const usePresentations = (projectId: string) => {
       toast.error('ID du projet manquant');
       return;
     }
-    
+
     if (schedules.length === 0) {
       toast.error('Aucun planning de soutenances trouvé à télécharger');
       return;
     }
-    
+
     try {
       const blob = await presentationService.generateSchedulePDF(projectId);
-      
+
       if (blob.size === 0) {
         toast.error('Le fichier PDF généré est vide');
         return;
       }
-      
+
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -171,20 +171,20 @@ export const usePresentations = (projectId: string) => {
       toast.error('ID du projet manquant');
       return;
     }
-    
+
     if (schedules.length === 0) {
       toast.error('Aucun planning de soutenances trouvé pour générer la liste d\'émargement');
       return;
     }
-    
+
     try {
       const blob = await presentationService.generateAttendanceSheetPDF(projectId, sortBy);
-      
+
       if (blob.size === 0) {
         toast.error('Le fichier PDF généré est vide');
         return;
       }
-      
+
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -193,7 +193,6 @@ export const usePresentations = (projectId: string) => {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      toast.success('Liste d\'émargement téléchargée');
     } catch (err: any) {
       toast.error(err.message || 'Erreur lors de la génération de la liste d\'émargement');
     }

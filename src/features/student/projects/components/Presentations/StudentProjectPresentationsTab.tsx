@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { Calendar, Clock, Users, AlertCircle, MapPin, User } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../../../shared/components/ui/card';
 import { Badge } from '../../../../../shared/components/ui/badge';
+import { Button } from '../../../../../shared/components/ui/button';
 import { Alert, AlertDescription } from '../../../../../shared/components/ui/alert';
 import { useStudentPresentations } from '../../hooks/useStudentPresentations';
 import { PresentationSchedule } from '../../../../../domains/project/models/presentationModels';
@@ -84,6 +85,47 @@ const StudentProjectPresentationsTab: React.FC = () => {
     );
   }
 
+  const isInGroup = !!userGroup;
+
+  // Si l'étudiant n'est pas dans un groupe, afficher le message d'invitation
+  if (!isInGroup) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Planning des soutenances</h2>
+          <p className="text-muted-foreground">
+            Consultez les horaires de passage pour les soutenances
+          </p>
+        </div>
+
+        <Card>
+          <CardContent className="p-12">
+            <div className="text-center">
+              <Users className="h-24 w-24 text-muted-foreground mx-auto mb-6" />
+              <h3 className="text-2xl font-semibold mb-4">Vous devez rejoindre un groupe</h3>
+              <Alert className="mb-6 max-w-md mx-auto">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Pour accéder au planning des soutenances, vous devez d'abord faire partie d'un groupe. Rejoignez un groupe existant ou créez le vôtre dans l'onglet Groupes.
+                </AlertDescription>
+              </Alert>
+              <Button
+                onClick={() => {
+                  const event = new CustomEvent('changeTab', { detail: 'group' });
+                  window.dispatchEvent(event);
+                }}
+                className="gap-2"
+              >
+                <Users className="h-4 w-4" />
+                Rejoindre un groupe
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -102,22 +144,7 @@ const StudentProjectPresentationsTab: React.FC = () => {
         </Alert>
       )}
 
-      {!userGroup && !loading && !error && (
-        <Alert className="mb-6">
-          <Users className="h-4 w-4" />
-          <AlertDescription>
-            <strong>Vous n'êtes assigné à aucun groupe</strong>
-            <br />
-            Vous devez être assigné à un groupe pour voir votre créneau de soutenance.
-            <br />
-            <span className="text-sm text-muted-foreground mt-2 block">
-              Contactez votre enseignant ou consultez l'onglet "Groupes" pour plus d'informations.
-            </span>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {schedules.length === 0 && !loading && !error && userGroup && (
+      {schedules.length === 0 && !loading && !error && (
         <Alert className="mb-6">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
@@ -212,14 +239,14 @@ const StudentProjectPresentationsTab: React.FC = () => {
             <div className="space-y-3">
               {schedules.map((schedule) => {
                 const isUserGroup = userGroup && schedule.groupId === userGroup.id;
-                
+
                 return (
                   <div
                     key={schedule.id}
                     className={`
                       flex items-center gap-4 p-4 border rounded-lg transition-all
-                      ${isUserGroup 
-                        ? 'border-orange-300 bg-orange-50' 
+                      ${isUserGroup
+                        ? 'border-orange-300 bg-orange-50'
                         : 'border-gray-200 bg-white hover:shadow-sm'
                       }
                     `}
@@ -267,7 +294,7 @@ const StudentProjectPresentationsTab: React.FC = () => {
         </Card>
       )}
 
-      {schedules.length === 0 && !loading && !error && !userGroup && (
+      {schedules.length === 0 && !loading && !error && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
             <Calendar className="h-16 w-16 text-muted-foreground mb-4" />
@@ -276,7 +303,7 @@ const StudentProjectPresentationsTab: React.FC = () => {
               Le planning des soutenances n'est pas encore disponible.
             </p>
             <p className="text-sm text-muted-foreground text-center">
-              Assurez-vous d'être assigné à un groupe et attendez que votre enseignant crée le planning.
+              Revenez plus tard pour consulter les horaires de passage.
             </p>
           </CardContent>
         </Card>

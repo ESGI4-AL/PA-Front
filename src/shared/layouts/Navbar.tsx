@@ -1,11 +1,12 @@
 import React, { useState, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useNavbarScroll } from '../hooks/useNavbarScroll';
 import { useClickOutside } from '../hooks/useClickOutside';
 import logo from '@/assets/images/logo.svg';
 
 const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
   const headerRef = useRef<HTMLElement>(null);
   const navContentRef = useRef<HTMLDivElement>(null);
@@ -61,7 +62,7 @@ const Navbar: React.FC = () => {
             id="navAction"
             ref={navActionRef}
             className="mx-auto lg:mx-0 hover:underline bg-white text-gray-800 font-bold rounded-full mt-4 lg:mt-0 py-4 px-8 shadow opacity-75 focus:outline-none focus:shadow-outline transform transition hover:scale-105 duration-300 ease-in-out"
-            onClick={() => window.location.href = '/login'}
+            onClick={() => navigate('/login')}
           >
             Se connecter
           </button>
