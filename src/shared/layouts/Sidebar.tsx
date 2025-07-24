@@ -88,8 +88,7 @@ function SidebarContent({ role }: SidebarProperties) {
 
       <div className="border-t border-white/20 flex p-3">
         {user ? (
-          <Link
-            to={`/${role}/profile`}
+          <div
             className={`
               flex items-center w-full rounded-lg p-2 -m-2
               transition-all duration-200 group relative
@@ -97,7 +96,10 @@ function SidebarContent({ role }: SidebarProperties) {
                 ? "bg-white/20 text-white"
                 : "hover:bg-white/15 text-white/90 hover:text-white"
               }
+              cursor-default
             `}
+            tabIndex={-1}
+            aria-disabled="true"
           >
             <img
               src={`https://ui-avatars.com/api/?background=ffccbb&color=fa3747&bold=true&name=${encodeURIComponent(getUserInitials())}`}
@@ -160,7 +162,7 @@ function SidebarContent({ role }: SidebarProperties) {
                 Voir le profil
               </div>
             )}
-          </Link>
+          </div>
         ) : (
           // Alternative si les données de l'utilisateur ne sont pas disponibles
           <div className="flex items-center w-full">
