@@ -48,10 +48,10 @@ const AddStudentDialog: React.FC<AddStudentDialogProps> = ({
   });
 
   const handleSubmit = async (values: FormValues) => {
+    onOpenChange(false);
     const success = await onAddStudent(values);
     if (success) {
       form.reset();
-      onOpenChange(false);
     }
   };
 

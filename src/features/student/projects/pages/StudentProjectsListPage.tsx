@@ -70,7 +70,6 @@ const StudentProjectsListPage: React.FC = () => {
       fetchMyProjects({
         search: searchTerm,
         page: currentPage,
-        limit: 10
       });
     }, 500);
 
@@ -82,7 +81,6 @@ const StudentProjectsListPage: React.FC = () => {
       await fetchMyProjects({
         search: searchTerm,
         page: currentPage,
-        limit: 10
       });
       clearError();
     } catch (err) {

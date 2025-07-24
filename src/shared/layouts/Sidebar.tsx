@@ -1,4 +1,4 @@
-import { ChevronFirst, ChevronLast } from 'lucide-react';
+import { ChevronFirst, ChevronLast, Loader2 } from 'lucide-react';
 import logo from '@/assets/images/logo.svg';
 import { useSidebar } from '../hooks/useSidebar';
 import SidebarItemComponent from '../components/SidebarItemComponent';
@@ -9,6 +9,8 @@ import { Link } from 'react-router-dom';
 interface SidebarProperties {
   role: 'teacher' | 'student';
 }
+
+import { useState } from 'react';
 
 function SidebarContent({ role }: SidebarProperties) {
   const {
@@ -22,9 +24,15 @@ function SidebarContent({ role }: SidebarProperties) {
   const { expanded, toggleExpanded } = useSidebarContext();
   const { logout } = useAuth();
 
-  const handleLogout = (e: React.MouseEvent) => {
+
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async (e: React.MouseEvent) => {
     e.preventDefault();
+    setIsLoggingOut(true);
+    await new Promise(resolve => setTimeout(resolve, 2000)); // 2 seconds delay
     logout();
+    setIsLoggingOut(false);
   };
 
   const isProfileActive = location.pathname === `/${role}/profile`;
@@ -71,10 +79,10 @@ function SidebarContent({ role }: SidebarProperties) {
 
         <SidebarItemComponent
           icon="LogOut"
-          text="Se déconnecter"
+          text={isLoggingOut ? "Déconnexion..." : "Se déconnecter"}
           to="/logout"
           active={false}
-          onClick={handleLogout}
+          onClick={isLoggingOut ? undefined : handleLogout}
         />
       </ul>
 
@@ -171,6 +179,14 @@ function SidebarContent({ role }: SidebarProperties) {
           </div>
         )}
       </div>
+      {isLoggingOut && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center gradient">
+          <div className="flex flex-col items-center">
+            <Loader2 className="animate-spin text-white" size={48} />
+            <span className="mt-4 text-white text-lg font-semibold">Déconnexion...</span>
+          </div>
+        </div>
+      )}
     </nav>
   );
 }

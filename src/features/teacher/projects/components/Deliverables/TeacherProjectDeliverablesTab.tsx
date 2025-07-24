@@ -301,9 +301,24 @@ const TeacherProjectDeliverablesTab: React.FC = () => {
     }
   };
 
-  // TODO : a modifier pour ouvrir la feuille de notation dans le tab evaluation
-  const handleOpenGradingSheet = (group: any, deliverable: any) => {
-  };
+  const handleOpenGradingSheet = async (group: any, deliverable: any) => {
+  try {
+    const summary = await getDeliverableSummary(deliverable.id);
+
+    const filteredSummary = {
+      ...summary,
+      groupSummaries: summary.groupSummaries?.filter(
+        (groupSummary: any) => groupSummary.group.id === group.id
+      ) || []
+    };
+
+    setSelectedDeliverableForGrading(filteredSummary);
+    setIsGradingDialogOpen(true);
+  } catch (error) {
+    console.error('Erreur lors de l\'ouverture de la grille de notation:', error);
+    toast.error('Erreur lors du chargement des données de notation');
+  }
+};
 
   const handleCloseSimilarityDialog = () => {
     setIsSimilarityDialogOpen(false);

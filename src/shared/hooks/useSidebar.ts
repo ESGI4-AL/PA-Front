@@ -77,7 +77,6 @@ export const useSidebar = (role: 'teacher' | 'student') => {
 
   const commonLinks = [
     { to: `/${role}/notifications`, label: 'Notifications', icon: 'Bell'},
-    { to: `/${role}/settings`, label: 'Paramètres', icon: 'Settings' },
   ];
 
   const roleSpecificLinks = role === 'teacher' ? teacherLinks : studentLinks;
