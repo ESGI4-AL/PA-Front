@@ -479,7 +479,6 @@ export const useGroups = (projectId: string) => {
       console.log('Rechargement des données après suppression du groupe...');
       await fetchAllData();
 
-      toast.success('Groupe supprimé avec succès');
       console.log('=== FIN SUPPRESSION GROUPE (SUCCÈS) ===');
 
     } catch (error) {
